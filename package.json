@@ -1,0 +1,36 @@
+{
+  "name": "shelloid",
+  "version": "0.0.1-alpha",
+  "description": "Simple and secure Node.js web application server.",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shelloid/shelloid.git"
+  },
+  "keywords": [
+    "application",
+    "server",
+    "security",
+    "web",
+    "service",
+    "OWASP"
+  ],
+  "author": "Jayaraj Poroor",
+  "license": "LGPL 3.0",
+  "bugs": {
+    "url": "https://github.com/shelloid/shelloid/issues"
+  },
+  "homepage": "http://shelloid.org",
+  "preferGlobal": "true",
+  "bin": {
+    "shelloid" : "src/main.js"
+  },  
+  
+ "dependencies": {
+    "express": "^3.0.0",
+	"winston": "*"
+  }  
+}

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--<base href="..." />-->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"         content="Simple and secure Node.JS application server for rapidly developing secure web services. OWASP-compliant.">
+    <meta name="title" content="Enhance your development productivity with our secure web services platform.">
+    <meta name="author" content="">
+    <meta name="keywords"
+          content="web services, Node.JS, web application, OWASP, secure, dependable, application server">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+
+    <title>Shelloid</title>
+
+    <link href="css/thirdparty/bootstrap.min.css" rel="stylesheet">
+    <link href="css/thirdparty/font-awesome.min.css" rel="stylesheet">
+    <link href="js/thirdparty/toast/jquery.toast.css" rel="stylesheet">
+	<link href="css/dependjs/main.css" rel="stylesheet">
+
+
+    <script src="js/thirdparty/jquery.min.js"></script>
+    <script src="js/thirdparty/bootstrap.min.js"></script>
+    <script src="js/thirdparty/toast/jquery.toast.min.js"></script>
+    <script src="js/thirdparty/bootbox.js"></script>
+	<script src="js/dependjs/main.js"></script>
+
+    <!--[if lt IE 9]>
+    <script src="js/thirdparty/html5shiv.js"></script>
+    <script src="js/thirdparty/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        ul.ok {
+            list-style-type: none;
+            margin-left: 0;
+            padding-left: 1em;
+        }
+
+        ul.ok li:before {
+            font-family: 'FontAwesome';
+            content: '\f00c';
+            margin: 0 5px 0 -15px;
+            color: #008082;
+        }
+
+        ul.ok li {
+            margin-bottom: 1ex
+        }
+
+        .grad {
+            /* fallback */
+            background-color: #f1f1f1;
+
+            /* Safari 4-5, Chrome 1-9 */
+            background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(white), to(#f1f1f1));
+
+            /* Safari 5.1, Chrome 10+ */
+            background: -webkit-linear-gradient(top, white, #f1f1f1);
+
+            /* Firefox 3.6+ */
+            background: -moz-linear-gradient(top, white, #f1f1f1);
+
+            /* IE 10 */
+            background: -ms-linear-gradient(top, white, #f1f1f1);
+
+            /* Opera 11.10+ */
+            background: -o-linear-gradient(top, white, #f1f1f1);
+
+            background: linear-gradient(top, white, #f1f1f1);
+        }
+
+        .stdtxt {
+            color: #008082;
+            font-size: 14pt
+        }
+
+       .note {
+            color: #008082;
+            font-size: 10pt
+        }
+
+        .sharptxt {
+            color: #243842;
+        }
+
+        input {
+            border-radius: 5px
+        }
+
+        ::-webkit-input-placeholder {
+            color: #008082;
+            font-weight: normal
+        }
+
+        :-moz-placeholder {
+            /* Firefox 18- */
+            color: #008082;
+            font-weight: normal
+        }
+
+        ::-moz-placeholder {
+            /* Firefox 19+ */
+            color: #008082;
+            font-weight: normal
+        }
+
+        :-ms-input-placeholder {
+            color: #008082;
+        }
+    </style>
+    <script>
+        var JSON = JSON || {};
+
+        JSON.stringify = JSON.stringify || function (obj) {
+            var t = typeof (obj);
+            if (t != "object" || obj === null) {
+                // simple data type
+                if (t == "string") obj = '"' + obj + '"';
+                return String(obj);
+            }
+            else {
+                // recurse array or object
+                var n, v, json = [], arr = (obj && obj.constructor == Array);
+                for (n in obj) {
+                    v = obj[n];
+                    t = typeof(v);
+                    if (t == "string") v = '"' + v + '"';
+                    else if (t == "object" && v !== null) v = JSON.stringify(v);
+                    json.push((arr ? "" : '"' + n + '":') + String(v));
+                }
+                return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+            }
+        };
+
+        function showToast(msg) {
+            //type: danger info success
+            var options = {duration: 3000, sticky: false, type: "info"};
+            $.toast(msg, options);
+        }
+
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                    results = regex.exec(location.search);
+            return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+        function submitUserInfo() {
+            var name = $('#username').val();
+            var email = $('#email').val();
+            if (name == "" || email == "" || !ValidateEmail(email)) {
+                showToast("Please input correct email and username")
+                return;
+            } else {
+                $.post("/interest", {name: name, email: email, who_invited: getParameterByName("id")}, function (resp) {
+                    if (resp.status == 200) {
+                        $("#username").val("");
+                        $("#email").val("");
+                        $("#formcontent").html("<div style='font-size: 14pt;font-style:oblique;padding-left:1em;text-align:left;border-color: #008082; border-width:1px;border-style:solid;border-radius:5px;'>" +
+                        "</span>");
+
+                    } else {
+                        console.log(resp);
+                        showToast("Error: " + resp.msg);
+                    }
+                }).fail(function (xhr, status, err) {
+                    showToast("Couldn't post the information to the server. Please try again.");
+                    console.log("ajax status: " + status + " err: " + err + " xhr.status: " + xhr.status);
+                });
+            }
+        }
+
+        $(function () {
+            $("#go").click(function (e) {
+                e.preventDefault();
+                submitUserInfo()
+            });
+        });
+        function ValidateEmail(mail)
+        {
+            if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail))
+            {
+                return (true)
+            }
+            return (false)
+        }
+
+    </script>
+</head>
+<!--/head-->
+<body class="grad">
+<center>
+
+    <!--<font style="color:#3f6bb0;font-size:34pt;text-shadow: 2px 2px 8px #3f6bb0;font-weight:500">Shelloid</font><br/> #008082-->
+	<br/><br/>
+    <div style="font-size:34pt;">
+	Depend.JS</div>
+	<span style="font-size:14pt;font-style:oblique">
+	Simple &amp; Secure Node.js web application server.
+	</span>
+</center>
+<br/>
+
+<div style="color:black;text-align:center">
+    <div style="font-size:24pt" class="sharptxt">
+        <!--Eliminate the technology roadblocks in your path.-->
+        Enhance your development productivity with our secure web services platform.
+    </div>
+    <br/>
+
+    <div style="font-size:14pt;font-weight:500" class="stdtxt">
+        <table align="center" width="70%">
+            <tr>
+                <td>
+
+                    <div id="formcontent">
+                        <form>
+                            <font style="font-size:18pt">Admin Console Login</font>
+                            <br/><br/>
+                            <input type="text" size="30" id="name" placeholder="Your login name" class="stdtxt">
+                            <input type="password" size="30" id="password" placeholder="Your password" class="stdtxt">
+                            <input type="button" id="go" value="Login" class="stdtxt">
+                        </form>
+                    </div>
+                    <br>
+
+                    <div style="text-align: left" class="stdtxt">
+                        <ul class="ok">
+                            <li>Takes care of the infrastructure logic and lets you focus on your business logic, leading to <u>quick time to market</u> for your business-critical applciations.
+							<li><u>OWASP</u>-compliant security with no effort.
+							<li><u>User-friendly</u> admin console.
+							<li><u>Open Sourced</u> under LGPL license.
+                        </ul>
+						<hr style="height:2px;color:gray"/>
+						<!--<sup><i class="fa fa-hand-o-right"></i></sup>
+						<span class="note"><a name="note">Support only for JSON web services initially.</span>-->
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <p>&nbsp;
+
+        <div>
+
+
+        </div>
+    </div>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+	
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54343495-1', 'auto');
+  ga('send', 'pageview');
+
+</script>	
+</body>
+</html>
