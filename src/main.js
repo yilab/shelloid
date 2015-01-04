@@ -37,7 +37,7 @@ if(utils.fileExists(packageJsonFile)){
 	try{
 		packageJson = JSON.parse(txt);
 	}catch(err){
-		console.log("Error parsing Depend.JS package.json: " + packageJsonFile + " : " + err);
+		console.log("Error parsing Shelloid package.json: " + packageJsonFile + " : " + err);
 		process.exit(0);
 	}
 }
@@ -153,13 +153,13 @@ function loadingDone(){
 	var server = http.createServer(app);
 
 	server.listen(config.app.port, function(){
-	  console.log('DependJS server version: ' + serverCtx.packageJson.version + ' listening');
+	  console.log('Shelloid server version: ' + serverCtx.packageJson.version + ' listening');
 	});
 	
 	var adminServer = http.createServer(adminApp);
 
 	adminServer.listen(config.admin.port, function(){
-	  console.log('DependJS admin Server listening');
+	  console.log('Shelloid admin Server listening');
 	});
 	
 }
