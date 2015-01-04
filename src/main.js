@@ -149,7 +149,7 @@ function loadingDone(){
 		console.log("No controllers configured! Exiting.");
 		process.exit();
 	}
-	//TODO configure routes.
+
 	var server = http.createServer(app);
 
 	server.listen(config.app.port, function(){
