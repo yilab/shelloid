@@ -43,6 +43,10 @@ exports.merge = function(obj1, obj2){
 	return mergeRecursive(obj1, obj2);
 }
 
+exports.isAbsolutePath = function(path){
+	return path.startsWith("/") || path.startsWith("\\") || (path.search(/.:[\/\\]/) >= 0)
+}
+
 function mergeRecursive(obj1, obj2) {
   for (var p in obj2) {
     try {
