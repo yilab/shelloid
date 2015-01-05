@@ -1,7 +1,9 @@
 var path = require("path");
 var fs = require("fs");
-var utils = lib_require("utils");
+var NeDB = require("nedb");
 var assert = require("assert");
+
+var utils = lib_require("utils");
 
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
@@ -11,35 +13,46 @@ String.prototype.startsWith = function (str){
     return this.indexOf(str) == 0;
 };
 
-exports.checkAndSetAppPath = function(pathParam, serverCtx){
-	serverCtx.appCtx.basePath = path.resolve(pathParam);
-	if(!utils.dirExists(serverCtx.appCtx.basePath)){
+exports.checkAndSetAppPath = function(pathParam, appCtx){
+	appCtx.basePath = path.resolve(pathParam);
+	if(!utils.dirExists(appCtx.basePath)){
 		console.log("The provided path: " + pathParam + " (resolves to " + 
-						serverCtx.appCtx.basePath + ") is not a directory");
+						appCtx.basePath + ") is not a directory");
 		process.exit(0);	
 	}
-	app_require(serverCtx.appCtx.basePath, true);	
+	app_require(appCtx.basePath, true);	
 }
 
-exports.loadAppConfig = function(serverCtx){
-	var configFile = serverCtx.appCtx.basePath + "/" + "config.json";
+exports.loadAppConfig = function(appCtx){
+	var configFile = appCtx.basePath + "/" + "config.json";
 
 	if(utils.fileExists(configFile)){
 		var configTxt = fs.readFileSync(configFile, "utf-8");
 		try{
 			var config = JSON.parse(configTxt);
-			serverCtx.appCtx.config = utils.merge(serverCtx.appCtx.config, config);
+			appCtx.config = utils.merge(appCtx.config, config);
 			assert(config.dataDir !== undefined);
-			if(utils.isAbsolutePath(config.dataDir)){
-				config.absDataDir = config.dataDir;
-			}else{
-				config.absDataDir = path.normalize(path.join(serverCtx.appCtx.basePath, config.dataDir));
-			}
-			if(!utils.dirExists(config.absDataDir)){
-				console.log("Data directory: " + config.dataDir + 
-							"(" + config.absDataDir+ ") does not exist. Trying to create one.");
-				fs.mkdirSync(config.absDataDir);
-			}
+			config.absDataDir = utils.joinIfRelative(appCtx.basePath, config.dataDir);
+			utils.mkdirIfNotExists(config.absDataDir, 
+									"Data directory: " + config.dataDir + 
+									"(" + config.absDataDir+ ") does not exist. Trying to create one.");
+			
+			if(!config.uploadsDir){
+				config.uploadsDir = "uploads";
+				config.adminUploadsDir = "admin-uploads";
+			}			
+			
+			config.absUploadsDir = utils.joinIfRelative(config.absDataDir, config.uploadsDir);
+			utils.mkdirIfNotExists(config.absUploadsDir, 
+								"Uploads directory: " + config.uploadsDir + 
+								"(" + config.absUploadsDir+ ") does not exist. Trying to create one.");
+
+			config.absAdminUploadsDir = utils.joinIfRelative(config.absDataDir, config.adminUploadsDir);
+			utils.mkdirIfNotExists(config.absAdminUploadsDir, 
+							"Admin Uploads directory: " + config.adminUploadsDir + 
+							"(" + config.absAdminUploadsDir+ ") does not exist. Trying to create one.");
+								
+			
 		}catch(err){
 			console.log("Error parsing config.json: " + configFile + " : " + err);
 			process.exit(0);
@@ -47,8 +60,9 @@ exports.loadAppConfig = function(serverCtx){
 	}
 }
 
-exports.loadConfigDB = function(){
-
+exports.loadConfigDB = function(appCtx){
+	var db = new NeDB({filename: appCtx.absDataDir + "/config.db", autoload: true});
+	appCtx.configDB = db;
 }
 
 exports.serverCtx = function(){
@@ -72,7 +86,14 @@ exports.serverCtx = function(){
 			server: {
 				port: 9090
 			},
-			dataDir : "data"
+			dataDir : "data",
+			/*computed at init time*/
+			absDataDir: null,
+			uploadsDir: null,
+			absUploadsDir: null,
+			adminUploadsDir: null,
+			absAdminUploadsDir: null,
+			configDB: null
 		}
 			
 		},

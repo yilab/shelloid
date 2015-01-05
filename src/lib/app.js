@@ -4,12 +4,12 @@ var express = require('express'),
 	cookieSession = require('cookie-session'),
 	multer = require("multer");
 
-exports.newInstance = function(staticPath, cookieKey){
+exports.newInstance = function(staticPath, cookieKey, uploadsDir){
 	var app = express();
 	app.use(cookieParser());
 	app.use(bodyParser.json());
-	app.use(bodyParser.urlencoded());
-	app.use(multer({ dest: './uploads/',
+	app.use(bodyParser.urlencoded({extended:true}));
+	app.use(multer({ dest: uploadsDir,
 			rename: function (fieldname, filename) {
 				return filename+Date.now();
 			  },

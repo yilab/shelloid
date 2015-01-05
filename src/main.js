@@ -11,8 +11,7 @@
  */
  
 var http = require('http'),
-	path = require("path"),
-	nedb = require("nedb");
+	path = require("path");
 
 /*require/init order is important*/
 
@@ -33,12 +32,18 @@ if(process.argv.length <= 2){
 	process.exit(0);
 }
 
-init.checkAndSetAppPath(process.argv[2], serverCtx);
-init.loadAppConfig(serverCtx);
-init.loadConfigDB(serverCtx);
+init.checkAndSetAppPath(process.argv[2], serverCtx.appCtx);
+init.loadAppConfig(serverCtx.appCtx);
+init.loadConfigDB(serverCtx.appCtx);
 
-var userApp = app.newInstance(path.join(serverCtx.appCtx.basePath, 'public'), 'key1');
-var adminApp = app.newInstance(path.join(__dirname, 'public'), 'key2');
+var userApp = app.newInstance(
+			path.join(serverCtx.appCtx.basePath, 'public'), 
+			'key1', 
+			serverCtx.appCtx.absUploadsDir);
+var adminApp = app.newInstance(
+		path.join(__dirname, 'public'), 
+		'key2',
+		serverCtx.appCtx.absAdminUploadsDir);
 
 serverCtx.globals.userApp = userApp;
 serverCtx.globals.adminApp = adminApp;

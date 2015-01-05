@@ -7,7 +7,8 @@
  the terms of this license.
  You must not remove this notice, or any other, from this software.
  */
-var fs = require("fs");
+var fs = require("fs"),
+	path = require("path");
  
 exports.is = function (obj, type) {
     var clz = Object.prototype.toString.call(obj).slice(8, -1);
@@ -45,6 +46,23 @@ exports.merge = function(obj1, obj2){
 
 exports.isAbsolutePath = function(path){
 	return path.startsWith("/") || path.startsWith("\\") || (path.search(/.:[\/\\]/) >= 0)
+}
+
+exports.joinIfRelative = function(basePath, targetPath){
+	var absPath = targetPath;
+	if(!module.exports.isAbsolutePath(targetPath)){
+		absPath = path.normalize(path.join(basePath, targetPath));
+	}
+	return absPath;
+}
+
+exports.mkdirIfNotExists = function(dir, logMsg){
+	if(!module.exports.dirExists(dir)){
+		if(logMsg){
+			console.log(logMsg);
+		}
+		fs.mkdirSync(dir);
+	}
 }
 
 function mergeRecursive(obj1, obj2) {
