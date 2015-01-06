@@ -12,16 +12,6 @@ String.prototype.startsWith = function (str){
 
 var utils = lib_require("utils");
 
-exports.checkAndSetAppPath = function(pathParam, appCtx){
-	appCtx.basePath = path.resolve(pathParam);
-	if(!utils.dirExists(appCtx.basePath)){
-		console.log("The provided path: " + pathParam + " (resolves to " + 
-						appCtx.basePath + ") is not a directory");
-		process.exit(0);	
-	}
-	app_require(appCtx.basePath, true);	
-}
-
 exports.loadAppConfig = function(appCtx){
 	var configFile = appCtx.basePath + "/" + "config.json";
 
@@ -50,16 +40,37 @@ exports.loadAppConfig = function(appCtx){
 	}
 }
 
-exports.serverCtx = function(){
-	var packageJson = readPackageJson();
+exports.serverCtx = function(pathParam){
+
+	var appBasePath = checkAppBasePath(pathParam);
+
+	var packageJsonPath = path.normalize(path.join(__dirname,  "/../package.json"));
+	var packageJson = utils.readJsonFile(packageJsonPath, "Shelloid package.json");
+	
+	if(utils.isString(packageJson)){
+		console.log(packageJson);//this is an error string
+		process.exit(0);
+	}
+	var appPackageJsonPath = path.normalize(path.join(appBasePath,  "/package.json"));
+	var appPackageJson = utils.readJsonFile(appPackageJsonPath, "Application package.json");
+	if(utils.isString(appPackageJson)){
+		console.log(appPackageJson);//this is an error string
+		process.exit(0);
+	}
+
 	var ctx = 
 	{
+		packageJsonPath : packageJsonPath,
 		packageJson: packageJson,
 		constants : {
 			routesDir: "routes", 
 			authDir: "auth"
 		},
 		appCtx :{
+			hasErrors: false,
+			basePath: appBasePath,
+			packageJsonPath: appPackageJsonPath,
+			packageJson: appPackageJson,
 			routes: [],
 			authMods : [],
 			folders: {
@@ -91,20 +102,14 @@ exports.serverCtx = function(){
 	return ctx;
 }
 
-function readPackageJson(){
-	var packageJsonFile = __dirname + "/../package.json";
-	if(utils.fileExists(packageJsonFile)){
-		var txt = fs.readFileSync(packageJsonFile, "utf-8");
-		try{
-			packageJson = JSON.parse(txt);
-		}catch(err){
-			console.log("Error parsing Shelloid package.json: " + packageJsonFile + " : " + err);
-			process.exit(0);
-		}
-		return packageJson;
-	}else{
-		console.log("Couldn't find Shelloid package.json: " + packageJsonFile);
-		process.exit(0);
-	}
-}
 
+function checkAppBasePath(pathParam){
+	var basePath = path.resolve(pathParam);
+	if(!utils.dirExists(basePath)){
+		console.log("The provided path: " + pathParam + 
+					" (resolves to " + basePath + ") is not a directory");
+		process.exit(0);	
+	}
+	app_require(basePath, true);
+	return basePath;
+}

@@ -56,6 +56,23 @@ exports.joinIfRelative = function(basePath, targetPath){
 	return absPath;
 }
 
+exports.readJsonFile = function(filePath, infoTxt){
+	var res = "Unknown Error";
+	if(module.exports.fileExists(filePath)){
+		var txt = fs.readFileSync(filePath, "utf-8");
+		try{
+			res = JSON.parse(txt);
+		}catch(err){
+			res = "Error parsing the Json file: " + infoTxt + "(" + filePath + "). Error: " + err;
+			return res;
+		}
+	}else{
+		res = "Couldn't find the Json file: " + infoTxt + "(" + filePath + ")";
+	}
+	return res;
+}
+
+
 exports.mkdirIfNotExists = function(dir, logMsg){
 	if(!module.exports.dirExists(dir)){
 		if(logMsg){
@@ -63,6 +80,15 @@ exports.mkdirIfNotExists = function(dir, logMsg){
 		}
 		fs.mkdirSync(dir);
 	}
+}
+
+var toString = Object.prototype.toString;
+
+exports.isString = function(obj){
+  return toString.call(obj) == '[object String]';
+}
+exports.isArray = function(obj){
+	return obj.constructor == Array;
 }
 
 function mergeRecursive(obj1, obj2) {

@@ -22,31 +22,26 @@ var	init = require("./init.js");
 var loader = lib_require("loader"),
 	utils = lib_require("utils"),
 	route = lib_require("route"),
-	app   = lib_require("app");
+	app   = lib_require("app"),
+	auth = lib_require("auth");
 	
-var serverCtx = init.serverCtx();
-
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
 	process.exit(0);
 }
 
-init.checkAndSetAppPath(process.argv[2], serverCtx.appCtx);
+var serverCtx = init.serverCtx(process.argv[2]);
+
 init.loadAppConfig(serverCtx.appCtx);
 
-var app = app.newInstance(serverCtx.appCtx);
-
-serverCtx.appCtx.app = app;
+var appObj = serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
 
 loader.loadAuthMods(serverCtx, authModsLoaded);
 
-function authModsLoaded(){
-	var authMods = serverCtx.appCtx.authMods;
-	var count = 0;
-	for(var i=0;i < authMods.length; i++){
-		console.log(authMods[i]);
-		count++;
-	}
+function authModsLoaded(){	
+	
+	var count = auth.addAll(serverCtx.appCtx);
+	
 	if(count == 0){
 		console.log("No authentication modules configured!.");
 	}
@@ -55,18 +50,18 @@ function authModsLoaded(){
 }
 
 function routesLoaded(){
-	var routes = serverCtx.appCtx.routes;
-	var count = 0;
-	for(var i=0;i < routes.length; i++){
-		route.add(app, routes[i]);
-		count++;
-	}
+	var count = route.addAll(serverCtx.appCtx);
 	if(count == 0){
 		console.log("No routes configured! Exiting.");
 		process.exit();
 	}
+	
+	if(serverCtx.appCtx.hasErrors){
+		console.log("Application context has errors. Exiting.");
+		process.exit(0);
+	}
 
-	var server = http.createServer(app);
+	var server = http.createServer(appObj);
 
 	server.listen(serverCtx.appCtx.config.port, function(){
 	  console.log('Shelloid server version: ' + serverCtx.packageJson.version + ' listening');

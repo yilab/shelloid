@@ -1,4 +1,4 @@
-dependjs
+Shelloid
 ========
 
-Depend.JS: The OWASP-compliant Node.JS application server that makes application security painless.
+The Simple & Secure Node.js Web Application Server

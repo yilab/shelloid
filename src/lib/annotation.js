@@ -10,7 +10,7 @@
 var fs = require("fs");
 var liner = lib_require("liner");
 
-exports.parseAnnotations = function(pathInfo, callback){
+exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	var NONE = 0, SINGLE_QUOTED = 1, DOUBLE_QUOTED = 2, READING_KEY=3, READING_VALUE=4;
 	var stringState = NONE;
 	var annState = NONE;
@@ -147,8 +147,15 @@ exports.parseAnnotations = function(pathInfo, callback){
 				
 			if(annReady){
 				if(annValue == "") annValue = true;
-				eval("var v = " + annValue.trim());
-				annCurrent[annKey] = v;
+				try{
+					annValue = annValue.trim();
+					eval("var v = " + annValue);
+					annCurrent[annKey] = v;
+				}catch(err){
+					console.log("ERR: Syntax error in the annotation value for @" 
+								+ annKey + ": " + err + " in the file " + pathInfo.path);
+					serverCtx.appCtx.hasErrors = true;
+				}
 				annKey = ""; 
 				annValue = "";
 				if(annState == READING_VALUE){

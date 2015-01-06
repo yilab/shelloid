@@ -1,3 +1,17 @@
+var utils = lib_require("utils");
+
+exports.addAll = function(appCtx){
+	var routes = appCtx.routes;
+	var i;
+	for(i=0;i < routes.length; i++){
+		var ok = module.exports.add(appCtx.app, routes[i]);
+		if(!ok){
+			appCtx.hasErrors = true;
+		}
+	}
+	return i;
+}
+
 exports.add = function(app, ctrl){
 	var urlPath = ctrl.url;
 	if(ctrl.annotations["path"]){
@@ -15,7 +29,7 @@ exports.add = function(app, ctrl){
 		method = ctrl.annotations["method"];
 	}
 	
-	if(method.constructor == Array){
+	if(utils.isArray(method)){
 		for(var i=0;i<method.length;i++){
 			console.log("Mounting " + ctrl.relPath + 
 						" (" + ctrl.fnName + ") at " + urlPath + " (" + method[i] + ")");		
@@ -26,4 +40,6 @@ exports.add = function(app, ctrl){
 					" (" + ctrl.fnName + ") at " + urlPath + " (" + method + ")");
 		app[method](urlPath, ctrl.fn);
 	}
+	
+	return true;
 }

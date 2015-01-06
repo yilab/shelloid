@@ -18,7 +18,7 @@ exports.loadRoutes = function(serverCtx, done)
 	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.routesDir;
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.routes = p;	
-	loadModules(p, "routes", serverCtx.appCtx.routes, done);
+	loadModules(serverCtx, p, "routes", serverCtx.appCtx.routes, done);
 }
 
 exports.loadAuthMods = function(serverCtx, done)
@@ -26,10 +26,10 @@ exports.loadAuthMods = function(serverCtx, done)
 	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.authDir;
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.authMods = p;	
-	loadModules(p, "auth", serverCtx.appCtx.authMods, done);
+	loadModules(serverCtx, p, "auth", serverCtx.appCtx.authMods, done);
 }
 
-function loadModules(modPath, modType, mods, done){	
+function loadModules(serverCtx, modPath, modType, mods, done){	
 	if(!utils.dirExists(modPath)){
 		console.log("The " + modType + " folder does not exist: " + p);
 		process.nextTick(done);
@@ -48,7 +48,7 @@ function loadModules(modPath, modType, mods, done){
 	for(var i=0;i<files.length;i++){
 		if(files[i].path.endsWith(".js")){
 			console.log("Processing: " + files[i].path);
-			annotation.parseAnnotations(files[i],  
+			annotation.parseAnnotations(serverCtx, files[i],  
 				function(pathInfo, annotations){
 					var url = pathToURL(pathInfo.path, modPathLength);			
 					var m = require(pathInfo.path);
