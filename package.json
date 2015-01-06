@@ -39,6 +39,7 @@
 	"express-session": "1.10.0",
 	"lusca" : "1.0.2",
 	"passport" : "0.2.1",
-	"sessionstore" : "1.0.5"
+	"sessionstore" : "1.0.5",
+	"npm" : "1.4.28"
   }  
 }

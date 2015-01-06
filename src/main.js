@@ -10,7 +10,6 @@
  You must not remove this notice, or any other, from this software.
  */
 global.lib_require = require("./lib/lib_require.js");
-global.app_require = require("./lib/app_require.js");
 
 var http = require('http'),
 	path = require("path");
@@ -23,7 +22,8 @@ var loader = lib_require("loader"),
 	utils = lib_require("utils"),
 	route = lib_require("route"),
 	app   = lib_require("app"),
-	auth = lib_require("auth");
+	auth = lib_require("auth"),
+	app_pkg = lib_require("app_pkg");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
@@ -34,27 +34,37 @@ var serverCtx = init.serverCtx(process.argv[2]);
 
 init.loadAppConfig(serverCtx.appCtx);
 
-var appObj = serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
+app_pkg.init(serverCt.appCtx, app_pkg_initDone);
 
-loader.loadAuthMods(serverCtx, authModsLoaded);
-
-function authModsLoaded(){	
-	
-	var count = auth.addAll(serverCtx.appCtx);
-	
-	if(count == 0){
-		console.log("No authentication modules configured!.");
+function app_pkg_initDone(err){
+	if(err){
+		console.log("Server initialization error. Exiting.");
+		process.exit(0);
+	}else{
+		var appObj = serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
+		loader.loadAuthMods(serverCtx, authModsLoaded);
 	}
-	
+}
+
+function authModsLoaded(){		
+	if(serverCtx.appCtx.authMods.length == 0){
+		console.log("No authentication modules found.");
+	}else{
+		auth.addAll(serverCtx.appCtx, authModsAdded);
+	}
+}
+
+function authModsAdded(count){
 	loader.loadRoutes(serverCtx, routesLoaded);
 }
 
 function routesLoaded(){
-	var count = route.addAll(serverCtx.appCtx);
-	if(count == 0){
+	if(serverCtx.appCtx.routes.length == 0){
 		console.log("No routes configured! Exiting.");
 		process.exit();
 	}
+
+	route.addAll(serverCtx.appCtx);
 	
 	if(serverCtx.appCtx.hasErrors){
 		console.log("Application context has errors. Exiting.");

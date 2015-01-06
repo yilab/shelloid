@@ -91,6 +91,30 @@ exports.isArray = function(obj){
 	return obj.constructor == Array;
 }
 
+exports.isObject = function(obj){
+	return toString.call(param) == "[object Object]";
+}
+
+exports.countingBarrier = function(count, done){
+	if(count <= 0){
+		process.nextTick(done);
+		return;
+	}
+	var sync = new events.EventEmitter();
+	sync.on("count-down", function(){
+		count--;
+		if(count <= 0){
+			done();
+		}
+	});
+	
+	return {
+		countDown: function(){
+				sync.emit("count-down");	
+		}
+	}
+}
+
 function mergeRecursive(obj1, obj2) {
   for (var p in obj2) {
     try {

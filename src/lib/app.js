@@ -5,7 +5,8 @@ var express = require('express'),
 	sessionStore = require("sessionstore"),
 	multer = require("multer"),
 	lusca = require("lusca"),
-	path = require("path");
+	path = require("path"),
+	passport = require("passport");
 
 exports.newInstance = function(appCtx){
 	var staticPath = path.join(appCtx.basePath, 'public');
@@ -14,6 +15,7 @@ exports.newInstance = function(appCtx){
 	var uploadsDir = appCtx.config.uploadsDir;
 			
 	var app = express();
+	app.use(express.static(staticPath));	
 	app.use(cookieParser());
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({extended:true}));
@@ -44,7 +46,9 @@ exports.newInstance = function(appCtx){
 			store: sessionStore.createSessionStore()
 		})
 	);	
+	app.use(passport.initialize());
+	app.use(passport.session());	
 	app.use(app.router);
-	app.use(express.static(staticPath));
+
 	return app;
 }

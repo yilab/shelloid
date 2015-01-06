@@ -37,14 +37,8 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 	}	
 	var modPathLength = modPath.length;
 	var files = utils.recurseDirSync(modPath);
-	var sync = new events.EventEmitter();
-	var filesToBeProcessed = files.length;
-	sync.on("file-processed", function(){
-		filesToBeProcessed--;
-		if(filesToBeProcessed <= 0){
-			done();
-		}
-	});
+	var barrier = utils.countingBarrier(files.length, done);
+	
 	for(var i=0;i<files.length;i++){
 		if(files[i].path.endsWith(".js")){
 			console.log("Processing: " + files[i].path);
@@ -67,7 +61,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 							});
 						}
 					}
-					sync.emit("file-processed");
+					barrier.countDown();
 				}
 			);
 		}else

@@ -71,6 +71,7 @@ exports.serverCtx = function(pathParam){
 			basePath: appBasePath,
 			packageJsonPath: appPackageJsonPath,
 			packageJson: appPackageJson,
+			packageJsonModified: false,
 			routes: [],
 			authMods : [],
 			folders: {
@@ -110,6 +111,5 @@ function checkAppBasePath(pathParam){
 					" (resolves to " + basePath + ") is not a directory");
 		process.exit(0);	
 	}
-	app_require(basePath, true);
 	return basePath;
 }
