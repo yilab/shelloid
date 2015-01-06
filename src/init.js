@@ -1,9 +1,6 @@
 var path = require("path");
 var fs = require("fs");
-var NeDB = require("nedb");
 var assert = require("assert");
-
-var utils = lib_require("utils");
 
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
@@ -12,6 +9,8 @@ String.prototype.endsWith = function(suffix) {
 String.prototype.startsWith = function (str){
     return this.indexOf(str) == 0;
 };
+
+var utils = lib_require("utils");
 
 exports.checkAndSetAppPath = function(pathParam, appCtx){
 	appCtx.basePath = path.resolve(pathParam);
@@ -30,39 +29,25 @@ exports.loadAppConfig = function(appCtx){
 		var configTxt = fs.readFileSync(configFile, "utf-8");
 		try{
 			var config = JSON.parse(configTxt);
-			appCtx.config = utils.merge(appCtx.config, config);
-			assert(config.dataDir !== undefined);
-			config.absDataDir = utils.joinIfRelative(appCtx.basePath, config.dataDir);
-			utils.mkdirIfNotExists(config.absDataDir, 
-									"Data directory: " + config.dataDir + 
-									"(" + config.absDataDir+ ") does not exist. Trying to create one.");
-			
-			if(!config.uploadsDir){
-				config.uploadsDir = "uploads";
-				config.adminUploadsDir = "admin-uploads";
-			}			
-			
-			config.absUploadsDir = utils.joinIfRelative(config.absDataDir, config.uploadsDir);
-			utils.mkdirIfNotExists(config.absUploadsDir, 
-								"Uploads directory: " + config.uploadsDir + 
-								"(" + config.absUploadsDir+ ") does not exist. Trying to create one.");
-
-			config.absAdminUploadsDir = utils.joinIfRelative(config.absDataDir, config.adminUploadsDir);
-			utils.mkdirIfNotExists(config.absAdminUploadsDir, 
-							"Admin Uploads directory: " + config.adminUploadsDir + 
-							"(" + config.absAdminUploadsDir+ ") does not exist. Trying to create one.");
-								
-			
 		}catch(err){
 			console.log("Error parsing config.json: " + configFile + " : " + err);
 			process.exit(0);
 		}
+			
+		var config = appCtx.config = utils.merge(appCtx.config, config);
+		assert(config.dataDir !== undefined);
+		config._dataDir = config.dataDir;//save for later reference
+		config.dataDir = utils.joinIfRelative(appCtx.basePath, config.dataDir);
+		utils.mkdirIfNotExists(config.dataDir, 
+								"Data directory: " + config._dataDir + 
+								"(" + config.dataDir+ ") does not exist. Trying to create one.");								
+		config._uploadsDir = config.uploadsDir;
+		config.uploadsDir = utils.joinIfRelative(config.dataDir, config.uploadsDir);
+		utils.mkdirIfNotExists(config.uploadsDir, 
+							"Uploads directory: " + config.uploadsDir + 
+							"(" + config.uploadsDir+ ") does not exist. Trying to create one.");
+			
 	}
-}
-
-exports.loadConfigDB = function(appCtx){
-	var db = new NeDB({filename: appCtx.absDataDir + "/config.db", autoload: true});
-	appCtx.configDB = db;
 }
 
 exports.serverCtx = function(){
@@ -71,31 +56,35 @@ exports.serverCtx = function(){
 	{
 		packageJson: packageJson,
 		constants : {
-			controllerDir: "routes", 
+			routesDir: "routes", 
 			authDir: "auth"
 		},
-		globals: {
-			app: null
-		},
 		appCtx :{
-			controllers: {},
+			routes: [],
+			authMods : [],
+			folders: {
+				routes: null,
+				authMods: null
+			},
+			app: null,
 			config: {
-			app : {
-				port: 8080
-			},
-			server: {
-				port: 9090
-			},
-			dataDir : "data",
-			/*computed at init time*/
-			absDataDir: null,
-			uploadsDir: null,
-			absUploadsDir: null,
-			adminUploadsDir: null,
-			absAdminUploadsDir: null,
-			configDB: null
-		}
-			
+				port: 8080,
+				dataDir : "data",
+				uploadsDir : "uploads", //relative to dataDir
+				authBase : "auth",
+				session:
+				{
+					name: "connect.sid",
+					secret: "secret",
+					store : null,/*defaults to in-memory store. else give name of the database*/
+				},
+				databases:
+				{
+					/*database name => 
+					{type (mongodb, redis, mysql), host, port, username, password, other params}
+					*/
+				}
+			}			
 		},
 	};
 	

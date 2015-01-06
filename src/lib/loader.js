@@ -13,17 +13,30 @@ var events = require('events');
 var utils = lib_require("utils");
 var annotation = lib_require("annotation");
 
-exports.loadControllers = function(serverCtx, done)
+exports.loadRoutes = function(serverCtx, done)
 {
-	appPath = serverCtx.appCtx.basePath + "/" + serverCtx.constants.controllerDir;
-	appPath = path.normalize(appPath);
-	if(!utils.dirExists(appPath)){
-		console.log("Controllers folder 'routes' does not exist");
+	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.routesDir;
+	p = path.normalize(p);
+	serverCtx.appCtx.folders.routes = p;	
+	loadModules(p, "routes", serverCtx.appCtx.routes, done);
+}
+
+exports.loadAuthMods = function(serverCtx, done)
+{
+	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.authDir;
+	p = path.normalize(p);
+	serverCtx.appCtx.folders.authMods = p;	
+	loadModules(p, "auth", serverCtx.appCtx.authMods, done);
+}
+
+function loadModules(modPath, modType, mods, done){	
+	if(!utils.dirExists(modPath)){
+		console.log("The " + modType + " folder does not exist: " + p);
 		process.nextTick(done);
 		return;		
 	}	
-	var appPathLength = appPath.length;
-	var files = utils.recurseDirSync(appPath);
+	var modPathLength = modPath.length;
+	var files = utils.recurseDirSync(modPath);
 	var sync = new events.EventEmitter();
 	var filesToBeProcessed = files.length;
 	sync.on("file-processed", function(){
@@ -35,27 +48,23 @@ exports.loadControllers = function(serverCtx, done)
 	for(var i=0;i<files.length;i++){
 		if(files[i].path.endsWith(".js")){
 			console.log("Processing: " + files[i].path);
-			annotation.parseAnnotations(files[i], serverCtx, 
+			annotation.parseAnnotations(files[i],  
 				function(pathInfo, annotations){
-					var url = pathToURL(pathInfo.path, appPathLength);			
+					var url = pathToURL(pathInfo.path, modPathLength);			
 					var m = require(pathInfo.path);
 					for(f in m){
 						if(m.hasOwnProperty(f) && (typeof m[f]) == 'function'){
 							if(f != "index"){
 								url = url + "/" + f;
-							}
-							if(serverCtx.appCtx.controllers[url] === undefined){
-								serverCtx.appCtx.controllers[url] = {
-									fn: m[f],
-									fnName: f,
-									annotations: annotations[f],
-									path: pathInfo.path,
-									relPath : pathInfo.relPath
-								};
-							}else{
-								console.log("A controller with the same URL already exists. URL: " + 
-									url + ". Path: " + pathInfo.path);
-							}
+							}							
+							mods.push({
+								fn: m[f],
+								fnName: f,
+								annotations: annotations[f],
+								path: pathInfo.path,
+								relPath : pathInfo.relPath,
+								url: url
+							});
 						}
 					}
 					sync.emit("file-processed");

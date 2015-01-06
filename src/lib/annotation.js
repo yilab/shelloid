@@ -10,7 +10,7 @@
 var fs = require("fs");
 var liner = lib_require("liner");
 
-exports.parseAnnotations = function(pathInfo, serverCtx, callback){
+exports.parseAnnotations = function(pathInfo, callback){
 	var NONE = 0, SINGLE_QUOTED = 1, DOUBLE_QUOTED = 2, READING_KEY=3, READING_VALUE=4;
 	var stringState = NONE;
 	var annState = NONE;

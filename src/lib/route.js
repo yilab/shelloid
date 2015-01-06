@@ -1,5 +1,5 @@
-exports.add = function(app, url, ctrl){
-	var urlPath = url;
+exports.add = function(app, ctrl){
+	var urlPath = ctrl.url;
 	if(ctrl.annotations["path"]){
 		urlPath = ctrl.annotations["path"];
 	}else if(ctrl.annotations["pathSuffix"]){

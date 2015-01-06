@@ -9,14 +9,13 @@
  the terms of this license.
  You must not remove this notice, or any other, from this software.
  */
- 
+global.lib_require = require("./lib/lib_require.js");
+global.app_require = require("./lib/app_require.js");
+
 var http = require('http'),
 	path = require("path");
 
 /*require/init order is important*/
-
-global.app_require = require("./lib/app_require.js");
-global.lib_require = require("./lib/lib_require.js");
 
 var	init = require("./init.js");
 
@@ -34,46 +33,43 @@ if(process.argv.length <= 2){
 
 init.checkAndSetAppPath(process.argv[2], serverCtx.appCtx);
 init.loadAppConfig(serverCtx.appCtx);
-init.loadConfigDB(serverCtx.appCtx);
 
-var userApp = app.newInstance(
-			path.join(serverCtx.appCtx.basePath, 'public'), 
-			'key1', 
-			serverCtx.appCtx.absUploadsDir);
-var adminApp = app.newInstance(
-		path.join(__dirname, 'public'), 
-		'key2',
-		serverCtx.appCtx.absAdminUploadsDir);
+var app = app.newInstance(serverCtx.appCtx);
 
-serverCtx.globals.userApp = userApp;
-serverCtx.globals.adminApp = adminApp;
+serverCtx.appCtx.app = app;
 
-loader.loadControllers(serverCtx, loadingDone);
+loader.loadAuthMods(serverCtx, authModsLoaded);
 
-function loadingDone(){
-	var controllers = serverCtx.appCtx.controllers;
+function authModsLoaded(){
+	var authMods = serverCtx.appCtx.authMods;
 	var count = 0;
-	for(url in controllers){
-		if(controllers.hasOwnProperty(url)){
-			route.add(userApp, url, controllers[url]);
-		}
+	for(var i=0;i < authMods.length; i++){
+		console.log(authMods[i]);
 		count++;
 	}
 	if(count == 0){
-		console.log("No controllers configured! Exiting.");
+		console.log("No authentication modules configured!.");
+	}
+	
+	loader.loadRoutes(serverCtx, routesLoaded);
+}
+
+function routesLoaded(){
+	var routes = serverCtx.appCtx.routes;
+	var count = 0;
+	for(var i=0;i < routes.length; i++){
+		route.add(app, routes[i]);
+		count++;
+	}
+	if(count == 0){
+		console.log("No routes configured! Exiting.");
 		process.exit();
 	}
 
-	var server = http.createServer(userApp);
+	var server = http.createServer(app);
 
-	server.listen(serverCtx.appCtx.config.app.port, function(){
+	server.listen(serverCtx.appCtx.config.port, function(){
 	  console.log('Shelloid server version: ' + serverCtx.packageJson.version + ' listening');
 	});
-	
-	var adminServer = http.createServer(adminApp);
-
-	adminServer.listen(serverCtx.appCtx.config.admin.port, function(){
-	  console.log('Shelloid admin Server listening');
-	});
-	
+		
 }

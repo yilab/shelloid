@@ -9,7 +9,7 @@
  */
 var fs = require("fs"),
 	path = require("path");
- 
+
 exports.is = function (obj, type) {
     var clz = Object.prototype.toString.call(obj).slice(8, -1);
     return obj !== undefined && obj !== null && clz === type;
@@ -44,8 +44,8 @@ exports.merge = function(obj1, obj2){
 	return mergeRecursive(obj1, obj2);
 }
 
-exports.isAbsolutePath = function(path){
-	return path.startsWith("/") || path.startsWith("\\") || (path.search(/.:[\/\\]/) >= 0)
+exports.isAbsolutePath = function(p){
+	return p.startsWith("/") || p.startsWith("\\") || (p.search(/.:[\/\\]/) >= 0)
 }
 
 exports.joinIfRelative = function(basePath, targetPath){
@@ -81,22 +81,22 @@ function mergeRecursive(obj1, obj2) {
   return obj1;
 }
 
-function recursiveDirSync2(path, relPath, res, remRecurse){
+function recursiveDirSync2(currPath, relPath, res, remRecurse){
 	if(remRecurse <= 0){
 		throw new Error("recursiveDirSync: Maximum recursion depth reached");
 	}
 	
-	var entries = fs.readdirSync(path);
+	var entries = fs.readdirSync(currPath);
 	for(var i =0;i<entries.length;i++){
 		if(entries[i] != "." && entries[i] != ".."){
-			var entryPath = path + "/" + entries[i];
+			var entryPath = currPath + "/" + entries[i];
 			entryRelPath = relPath ? relPath + "/" + entries[i] : entries[i];
 			var stat = fs.lstatSync(entryPath);
 			if(stat.isDirectory()){
 				recursiveDirSync2(entryPath, entryRelPath, res, remRecurse - 1 );
 			}else
 			if(stat.isFile()){
-				res.push({path: entryPath, relPath: entryRelPath});
+				res.push({path: path.normalize(entryPath), relPath: entryRelPath});
 			}
 		}
 	}
