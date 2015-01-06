@@ -1,5 +1,5 @@
 var passport = require("passport");
-var app_mod = lib_require("app_mod");
+var app_pkg = lib_require("app_pkg");
 var utils = lib_require("utils");
 
 exports.addAll = function(appCtx, done){
@@ -50,9 +50,9 @@ function addAuthMod(appCtx, authMod, barrier){
 		
 		switch(authType){
 			case "local" : 
-				app_mod.require(modInfo.name, modInfo.version, 
+				app_pkg.require(modInfo.name, modInfo.version, 
 					function(mod){
-						var LocalStrategy = new mod.Strategy;
+						var LocalStrategy = mod.Strategy;
 						passport.use(new LocalStrategy(
 							function(username, password, done){
 								var authMsg = {username: username, password: password, type: "local"};

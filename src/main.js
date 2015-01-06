@@ -34,7 +34,7 @@ var serverCtx = init.serverCtx(process.argv[2]);
 
 init.loadAppConfig(serverCtx.appCtx);
 
-app_pkg.init(serverCt.appCtx, app_pkg_initDone);
+app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
 
 function app_pkg_initDone(err){
 	if(err){

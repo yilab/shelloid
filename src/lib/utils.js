@@ -8,7 +8,8 @@
  You must not remove this notice, or any other, from this software.
  */
 var fs = require("fs"),
-	path = require("path");
+	path = require("path"),
+	events = require('events');	
 
 exports.is = function (obj, type) {
     var clz = Object.prototype.toString.call(obj).slice(8, -1);
@@ -113,6 +114,10 @@ exports.countingBarrier = function(count, done){
 				sync.emit("count-down");	
 		}
 	}
+}
+
+exports.writeJsonSync = function(filePath, obj){
+	fs.writeFileSync(filePath, JSON.stringify(obj, null, 4));
 }
 
 function mergeRecursive(obj1, obj2) {

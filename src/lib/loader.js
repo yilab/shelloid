@@ -9,7 +9,6 @@
  */
  
 var path = require("path");
-var events = require('events');
 var utils = lib_require("utils");
 var annotation = lib_require("annotation");
 

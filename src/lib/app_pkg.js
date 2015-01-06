@@ -1,6 +1,9 @@
-var utils = require("utils");
 var assert = require("assert");
 var npm = require("npm");
+var fs = require("fs");
+
+var utils = lib_require("utils");
+
 var appCtx;
 
 exports.init = function(ctx, done){
@@ -26,7 +29,7 @@ exports.init = function(ctx, done){
 exports.require = function(pkgName, pkgVersion, done){
 	assert(appCtx && appCtx.basePath);
 	var pkgPath = appCtx.basePath + "/node_modules/" + pkgName;
-	if(utils.dirExits(pkgPath)){
+	if(utils.dirExists(pkgPath)){
 		var m = require(pkgPath);
 		done(m);
 	}else{
@@ -34,6 +37,11 @@ exports.require = function(pkgName, pkgVersion, done){
 			pkgName = pkgName + "@" + pkgVersion;
 		}
 		console.log("Installing application package: " + pkgName);
+		appCtx.packageJson.dependencies[pkgName] = pkgVersion;
+		
+		utils.writeJsonSync(appCtx.packageJsonPath, appCtx.packageJson);
+		appCtx.packageJsonModified = true;
+		
 		npm.commands.install(appCtx.basePath, [pkgName], 
 			function (err, data) {
 				if(err){
