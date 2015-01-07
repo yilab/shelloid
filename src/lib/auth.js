@@ -114,9 +114,11 @@ function configureLocalAuth(appCtx, authMod){
 				done(null, user);
 			};
 			var errorFn = function(err){
+				console.log("Authentication error: " + err);			
 				done(null, false, {message: err});
 			}
 			errorFn.sys = function(err){
+				console.log("System error: " + err);			
 				done(err);
 			}
 			errorFn.app = errorFn;
@@ -177,9 +179,11 @@ function configureGoogleAuth(appCtx, authMod){
 				done(null, user);
 			};
 			var errorFn = function(err){
+				console.log("Authentication error: " + err);
 				done(null, false, {message: err});
 			}
 			errorFn.sys = function(err){
+				console.log("System error: " + err);			
 				done(err);
 			}
 			errorFn.app = errorFn;
@@ -190,7 +194,7 @@ function configureGoogleAuth(appCtx, authMod){
 	appCtx.app.get('/auth/google', passport.authenticate('google'));
 	
 	var routeFn = function(req, res, next) {
-	  passport.authenticate('local', function(err, user, info) {
+	  passport.authenticate('google', function(err, user, info) {
 			if (err) { return next(err); }
 			if (!user) { 
 				return res.redirect(appCtx.config.auth.failureRedirect); 
