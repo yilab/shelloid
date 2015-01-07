@@ -38,7 +38,8 @@ exports.addAll = function(appCtx, done){
 }
 
 var passportModules = {
-	"local" : {name: "passport-local", version: "*"}
+	"local" : {name: "passport-local", version: "*", configure : configureLocalAuth},
+	"google" : {name: "passport-google", version: "*", configure : configureGoogleAuth}
 }
 
 function addAuthMod(appCtx, authMod, barrier){
@@ -73,25 +74,22 @@ function addAuthMod(appCtx, authMod, barrier){
 		
 		var modInfo = passportModules[authType];//might not exist!
 		
-		switch(authType){
-			case "local" : 
-				app_pkg.require(modInfo.name, modInfo.version, 
-					function(mod){
-						authMod.passportMod = mod;
-						configureLocalAuth(appCtx, authMod);
-						innerBarrier.countDown();
-					}
-				);
-				break;
-			default:
-				console.log("Don't know how to process the authentication module: " + authMod.relPath 
-					+ " with @auth entry: " + authType);
-				appCtx.hasErrors = true;
-				innerBarrier.countDown();
-				break;
-		}
+		if(!modInfo){
+			console.log("Don't know how to process the authentication module: " + authMod.relPath 
+				+ " with @auth entry: " + authType);
+			appCtx.hasErrors = true;
+			innerBarrier.countDown();		
+		}else{
+			app_pkg.require(modInfo.name, modInfo.version, 
+				function(mod){
+					authMod.passportMod = mod;
+					modInfo.configure(appCtx, authMod);
+					innerBarrier.countDown();
+				}
+			);		
+		}		
 	}
-	return true;
+
 }
 
 function configureLocalAuth(appCtx, authMod){
@@ -141,15 +139,91 @@ function configureLocalAuth(appCtx, authMod){
 		})(req, res, next);
 	};	
 	
-	var routeMod = {
+	var route = {
 		annotations: {
 			path : authPath,
 			method: authMethod
 		},
 		fn: routeFn,
-		fnName: authMod.fnName,
-		relPath: authMod.relPath,
-		path: authMod.path
+		fnName: "localauth()",
+		relPath: "_internal"
 	};
-	appCtx.routes.push(routeMod);
+	appCtx.routes.push(route);
+}
+
+function configureGoogleAuth(appCtx, authMod){
+	var pathPrefix = authMod.annotations.pathPrefix;
+	var authMethod = authMod.annotations.method;
+	if(!pathPrefix){
+		pathPrefix = appCtx.config.auth.prefix;
+	}
+	var authPath = pathPrefix + "/google";
+	var returnPath = authPath + "/return";
+	var returnURL = appCtx.config.baseUrl +  returnPath;
+	
+	if(!authMethod){
+		authMethod = "post";
+	}	
+	
+	var GoogleStrategy = authMod.passportMod.Strategy;
+	
+	passport.use(new GoogleStrategy({
+			returnURL: returnURL,
+			realm: appCtx.config.baseUrl
+		},
+		function(identifier, profile, done) {
+			var authMsg = {identifier: identifier, profile: profile, type: "provider"};
+			var successFn = function(user){
+				done(null, user);
+			};
+			var errorFn = function(err){
+				done(null, false, {message: err});
+			}
+			errorFn.sys = function(err){
+				done(err);
+			}
+			errorFn.app = errorFn;
+			authMod.fn(authMsg, successFn, errorFn);
+		}
+	));
+
+	appCtx.app.get('/auth/google', passport.authenticate('google'));
+	
+	var routeFn = function(req, res, next) {
+	  passport.authenticate('local', function(err, user, info) {
+			if (err) { return next(err); }
+			if (!user) { 
+				return res.redirect(appCtx.config.auth.failureRedirect); 
+			}
+			req.logIn(user, function(err) {
+				if (err) { 
+					return next(err); 
+				}
+				return res.redirect(appCtx.config.auth.successRedirect);
+			});
+		})(req, res, next);
+	};	
+	
+	var route = {
+		annotations: {
+			path : authPath,
+			method: authMethod
+		},
+		fn: passport.authenticate('google'),
+		fnName: 'passport.authenticate("google")',
+		relPath: "_internal"
+	};
+	
+	var returnRoute = {
+		annotations: {
+			path : returnPath,
+			method: "get"
+		},
+		fn: routeFn,
+		fnName: '_internal',
+		relPath: "_internal"
+	};
+		
+	appCtx.routes.push(route);
+	appCtx.routes.push(returnRoute);
 }

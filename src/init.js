@@ -46,7 +46,12 @@ exports.loadAppConfig = function(appCtx){
 		utils.mkdirIfNotExists(config.uploadsDir, 
 							"Uploads directory: " + config.uploadsDir + 
 							"(" + config.uploadsDir+ ") does not exist. Trying to create one.");
-			
+		
+		config.baseUrl = config.proto + "://" + config.domain;
+		if(!((config.port == 80 && config.proto == "http") && 
+			(config.port == 443 && config.proto == "https"))){
+			config.baseUrl = config.baseUrl + ":" + config.port;
+		}
 	}
 }
 
@@ -90,10 +95,14 @@ exports.serverCtx = function(pathParam){
 			},
 			app: null,
 			config: {
+				domain: "localhost",
+				proto: "http",
 				port: 8080,
+				baseUrl: null, //computed dynamically
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
 				auth:{
+					prefix: "/auth",
 					successRedirect: "/home",
 					failureRedirect: "/"
 				},
