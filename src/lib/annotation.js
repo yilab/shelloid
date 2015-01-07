@@ -100,6 +100,7 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 						inComment = false;
 						if(annState == READING_KEY){
 							annState = NONE;
+							annReady = true;
 						}
 						isDocComment = false;
 						skipChars = 1;
@@ -146,7 +147,9 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 			}
 				
 			if(annReady){
-				if(annValue == "") annValue = true;
+				if(annValue == ""){
+					annValue = "true";
+				}
 				try{
 					annValue = annValue.trim();
 					eval("var v = " + annValue);

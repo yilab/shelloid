@@ -93,7 +93,10 @@ exports.serverCtx = function(pathParam){
 				port: 8080,
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
-				authBase : "auth",
+				redirects:{
+					authSuccess: "/home",
+					authFailure: "/"
+				},
 				session:
 				{
 					name: "connect.sid",

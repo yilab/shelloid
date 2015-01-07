@@ -30,7 +30,7 @@ exports.loadAuthMods = function(serverCtx, done)
 
 function loadModules(serverCtx, modPath, modType, mods, done){	
 	if(!utils.dirExists(modPath)){
-		console.log("The " + modType + " folder does not exist: " + p);
+		console.log("The " + modType + " folder does not exist: " + modPath);
 		process.nextTick(done);
 		return;		
 	}	
@@ -49,15 +49,20 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 						if(m.hasOwnProperty(f) && (typeof m[f]) == 'function'){
 							if(f != "index"){
 								url = url + "/" + f;
-							}							
-							mods.push({
-								fn: m[f],
-								fnName: f,
-								annotations: annotations[f],
-								path: pathInfo.path,
-								relPath : pathInfo.relPath,
-								url: url
-							});
+							}
+							if(!annotations[f].ignore){
+								mods.push({
+									fn: m[f],
+									fnName: f,
+									annotations: annotations[f],
+									path: pathInfo.path,
+									relPath : pathInfo.relPath,
+									url: url
+								});
+							}else{
+								console.log("Ignoring app module with @ignore: " + 
+																pathInfo.relPath + " (" + f + ")");
+							}
 						}
 					}
 					barrier.countDown();

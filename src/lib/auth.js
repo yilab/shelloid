@@ -29,7 +29,8 @@ var passportModules = {
 
 function addAuthMod(appCtx, authMod, barrier){
 	if(!authMod.annotations.auth){	
-		console.log("@auth annotation not specified for authentication module: " + authMod.relPath);
+		console.log("@auth annotation not specified for authentication module: " + 
+				authMod.relPath + " (" + authMod.fnName + ")");
 		appCtx.hasErrors = true;
 		barrier.countDown();
 		return;
@@ -66,9 +67,20 @@ function addAuthMod(appCtx, authMod, barrier){
 						passport.use(new LocalStrategy(
 							function(username, password, done){
 								var authMsg = {username: username, password: password, type: "local"};
-								authMod.fn(authMsg, done);
+								var successFn = function(user){
+									done(null, user);
+								}
+								var errorFn = function(err){
+									done(null, false, {message: err});
+								}
+								errorFn.sys = function(err){
+									done(err);
+								}
+								errorFn.app = errorFn;
+								authMod.fn(authMsg, successFn, errorFn);
 							}
 						));
+						innerBarrier.countDown();
 					}
 				);
 				break;

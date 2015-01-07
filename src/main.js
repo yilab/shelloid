@@ -41,7 +41,7 @@ function app_pkg_initDone(err){
 		console.log("Server initialization error. Exiting.");
 		process.exit(0);
 	}else{
-		var appObj = serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
+		serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
 		loader.loadAuthMods(serverCtx, authModsLoaded);
 	}
 }
@@ -54,7 +54,7 @@ function authModsLoaded(){
 	}
 }
 
-function authModsAdded(count){
+function authModsAdded(){
 	loader.loadRoutes(serverCtx, routesLoaded);
 }
 
@@ -71,10 +71,11 @@ function routesLoaded(){
 		process.exit(0);
 	}
 
-	var server = http.createServer(appObj);
+	var server = http.createServer(serverCtx.appCtx.app);
 
 	server.listen(serverCtx.appCtx.config.port, function(){
-	  console.log('Shelloid server version: ' + serverCtx.packageJson.version + ' listening');
+	  console.log('Shelloid server version: ' + serverCtx.packageJson.version + ' listening on ' + 
+		serverCtx.appCtx.config.port);
 	});
 		
 }
