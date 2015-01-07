@@ -93,9 +93,9 @@ exports.serverCtx = function(pathParam){
 				port: 8080,
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
-				redirects:{
-					authSuccess: "/home",
-					authFailure: "/"
+				auth:{
+					successRedirect: "/home",
+					failureRedirect: "/"
 				},
 				session:
 				{

@@ -12,6 +12,20 @@ var passport = require("passport");
 var app_pkg = lib_require("app_pkg");
 var utils = lib_require("utils");
 
+/*
+Default implementations: stores the user object directly in the session store 
+(by passing the stringified object as the 'id').
+*/
+passport.serializeUser(function(user, done) {
+	var id = JSON.stringify(user);
+	done(null, id);
+});
+
+passport.deserializeUser(function(id, done) {
+	var user = JSON.parse(id);
+    done(false, user);
+});
+
 exports.addAll = function(appCtx, done){
 	var authMods = appCtx.authMods;	
 
@@ -63,23 +77,8 @@ function addAuthMod(appCtx, authMod, barrier){
 			case "local" : 
 				app_pkg.require(modInfo.name, modInfo.version, 
 					function(mod){
-						var LocalStrategy = mod.Strategy;
-						passport.use(new LocalStrategy(
-							function(username, password, done){
-								var authMsg = {username: username, password: password, type: "local"};
-								var successFn = function(user){
-									done(null, user);
-								}
-								var errorFn = function(err){
-									done(null, false, {message: err});
-								}
-								errorFn.sys = function(err){
-									done(err);
-								}
-								errorFn.app = errorFn;
-								authMod.fn(authMsg, successFn, errorFn);
-							}
-						));
+						authMod.passportMod = mod;
+						configureLocalAuth(appCtx, authMod);
 						innerBarrier.countDown();
 					}
 				);
@@ -93,4 +92,64 @@ function addAuthMod(appCtx, authMod, barrier){
 		}
 	}
 	return true;
+}
+
+function configureLocalAuth(appCtx, authMod){
+	var authPath = authMod.annotations.path;
+	var authMethod = authMod.annotations.method;
+	if(!authPath){
+		console.log("Local authentication needs @path specification: " + 
+					authMod.relPath + "( " + authMod.fnName + ")");
+		appCtx.hasErrors = true;
+		return;
+	}
+	
+	if(!authMethod){
+		authMethod = "post";
+	}	
+	
+	var LocalStrategy = authMod.passportMod.Strategy;
+	passport.use(new LocalStrategy(
+		function(username, password, done){
+			var authMsg = {username: username, password: password, type: "local"};
+			var successFn = function(user){
+				done(null, user);
+			};
+			var errorFn = function(err){
+				done(null, false, {message: err});
+			}
+			errorFn.sys = function(err){
+				done(err);
+			}
+			errorFn.app = errorFn;
+			authMod.fn(authMsg, successFn, errorFn);
+		}
+	));
+
+	var routeFn = function(req, res, next) {
+	  passport.authenticate('local', function(err, user, info) {
+			if (err) { return next(err); }
+			if (!user) { 
+				return res.redirect(appCtx.config.auth.failureRedirect); 
+			}
+			req.logIn(user, function(err) {
+				if (err) { 
+					return next(err); 
+				}
+				return res.redirect(appCtx.config.auth.successRedirect);
+			});
+		})(req, res, next);
+	};	
+	
+	var routeMod = {
+		annotations: {
+			path : authPath,
+			method: authMethod
+		},
+		fn: routeFn,
+		fnName: authMod.fnName,
+		relPath: authMod.relPath,
+		path: authMod.path
+	};
+	appCtx.routes.push(routeMod);
 }
