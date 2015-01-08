@@ -39,7 +39,9 @@ exports.addAll = function(appCtx, done){
 
 var passportModules = {
 	"local" : {name: "passport-local", version: "*", configure : configureLocalAuth},
-	"google" : {name: "passport-google", version: "*", configure : configureGoogleAuth}
+	"google" : {name: "passport-google", version: "*", configure : configureProviderAuth},
+	"facebook" : {name: "passport-facebook", version: "*", configure : configureProviderAuth},
+	"twitter" : {name: "passport-twitter", version: "*", configure : configureProviderAuth}
 }
 
 function addAuthMod(appCtx, authMod, barrier){
@@ -83,7 +85,7 @@ function addAuthMod(appCtx, authMod, barrier){
 			app_pkg.require(modInfo.name, modInfo.version, 
 				function(mod){
 					authMod.passportMod = mod;
-					modInfo.configure(appCtx, authMod);
+					modInfo.configure(appCtx, authMod, authType);
 					innerBarrier.countDown();
 				}
 			);		
@@ -110,36 +112,11 @@ function configureLocalAuth(appCtx, authMod){
 	passport.use(new LocalStrategy(
 		function(username, password, done){
 			var authMsg = {username: username, password: password, type: "local"};
-			var successFn = function(user){
-				done(null, user);
-			};
-			var errorFn = function(err){
-				console.log("Authentication error: " + err);			
-				done(null, false, {message: err});
-			}
-			errorFn.sys = function(err){
-				console.log("System error: " + err);			
-				done(err);
-			}
-			errorFn.app = errorFn;
-			authMod.fn(authMsg, successFn, errorFn);
+			invokeAuthModFn(authMsg, authMod, done);
 		}
 	));
 
-	var routeFn = function(req, res, next) {
-	  passport.authenticate('local', function(err, user, info) {
-			if (err) { return next(err); }
-			if (!user) { 
-				return res.redirect(appCtx.config.auth.failureRedirect); 
-			}
-			req.logIn(user, function(err) {
-				if (err) { 
-					return next(err); 
-				}
-				return res.redirect(appCtx.config.auth.successRedirect);
-			});
-		})(req, res, next);
-	};	
+	var routeFn = authRoute("local", appCtx);
 	
 	var route = {
 		annotations: {
@@ -153,13 +130,13 @@ function configureLocalAuth(appCtx, authMod){
 	appCtx.routes.push(route);
 }
 
-function configureGoogleAuth(appCtx, authMod){
+function configureProviderAuth(appCtx, authMod, provider){
 	var pathPrefix = authMod.annotations.pathPrefix;
 	var authMethod = authMod.annotations.method;
 	if(!pathPrefix){
 		pathPrefix = appCtx.config.auth.prefix;
 	}
-	var authPath = pathPrefix + "/google";
+	var authPath = pathPrefix + "/" + provider;
 	var returnPath = authPath + "/return";
 	var returnURL = appCtx.config.baseUrl +  returnPath;
 	
@@ -167,54 +144,57 @@ function configureGoogleAuth(appCtx, authMod){
 		authMethod = "post";
 	}	
 	
-	var GoogleStrategy = authMod.passportMod.Strategy;
+	var AuthStrategy = authMod.passportMod.Strategy;
+	var strategyConfig;
 	
-	passport.use(new GoogleStrategy({
-			returnURL: returnURL,
-			realm: appCtx.config.baseUrl
-		},
+	switch(provider){
+		case "google":
+			strategyConfig = 
+				{
+					returnURL: returnURL,
+					realm: appCtx.config.baseUrl
+				};
+				break;
+		case "facebook" :
+			strategyConfig = 
+				{
+					callbackURL: returnURL,
+					clientID: appCtx.config.auth.facebook.appID,
+					clientSecret: appCtx.config.auth.facebook.appSecret,
+				};
+			break;
+		case "twitter":
+			strategyConfig = 
+				{
+					consumerKey: appCtx.config.auth.twitter.consumerKey,
+					consumerSecret: appCtx.config.auth.twitter.consumerSecret,
+					callbackURL: returnURL				
+				};		
+		default:
+			console.log("Does not support the provider: " + provider + 
+						". Module: " + authMod.relPath + " (" + authMod.fnName + ")");
+			appCtx.hasErrors = true;
+			return;			
+	}
+	
+	passport.use(new AuthStrategy(strategyConfig,
 		function(identifier, profile, done) {
-			var authMsg = {identifier: identifier, profile: profile, type: "provider"};
-			var successFn = function(user){
-				done(null, user);
-			};
-			var errorFn = function(err){
-				console.log("Authentication error: " + err);
-				done(null, false, {message: err});
-			}
-			errorFn.sys = function(err){
-				console.log("System error: " + err);			
-				done(err);
-			}
-			errorFn.app = errorFn;
-			authMod.fn(authMsg, successFn, errorFn);
+			var authMsg = {identifier: identifier, profile: profile, type: provider};
+			invokeAuthModFn(authMsg, authMod, done);
 		}
 	));
 
-	appCtx.app.get('/auth/google', passport.authenticate('google'));
+	appCtx.app.get(authPath, passport.authenticate(provider));
 	
-	var routeFn = function(req, res, next) {
-	  passport.authenticate('google', function(err, user, info) {
-			if (err) { return next(err); }
-			if (!user) { 
-				return res.redirect(appCtx.config.auth.failureRedirect); 
-			}
-			req.logIn(user, function(err) {
-				if (err) { 
-					return next(err); 
-				}
-				return res.redirect(appCtx.config.auth.successRedirect);
-			});
-		})(req, res, next);
-	};	
+	var routeFn = authRoute(provider, appCtx);	
 	
 	var route = {
 		annotations: {
 			path : authPath,
 			method: authMethod
 		},
-		fn: passport.authenticate('google'),
-		fnName: 'passport.authenticate("google")',
+		fn: passport.authenticate(provider),
+		fnName: 'passport.authenticate("' + provider + '")',
 		relPath: "_internal"
 	};
 	
@@ -230,4 +210,39 @@ function configureGoogleAuth(appCtx, authMod){
 		
 	appCtx.routes.push(route);
 	appCtx.routes.push(returnRoute);
+}
+
+function invokeAuthModFn(authMsg, authMod, done){
+	var successFn = function(user){
+		done(null, user);
+	};
+	var errorFn = function(err){
+		console.log("Authentication error: " + err);
+		done(null, false, {message: err});
+	}
+	errorFn.sys = function(err){
+		console.log("System error: " + err);			
+		done(err);
+	}
+	errorFn.app = errorFn;
+	authMod.fn(authMsg, successFn, errorFn);
+}
+
+function authRoute(authType, appCtx){
+	var route = 
+		function(req, res, next) {
+		  passport.authenticate(authType, function(err, user, info) {
+				if (err) { return next(err); }
+				if (!user) { 
+					return res.redirect(appCtx.config.auth.failureRedirect); 
+				}
+				req.logIn(user, function(err) {
+					if (err) { 
+						return next(err); 
+					}
+					return res.redirect(appCtx.config.auth.successRedirect);
+				});
+			})(req, res, next);
+		};
+	return route;
 }

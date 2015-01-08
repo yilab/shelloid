@@ -104,7 +104,15 @@ exports.serverCtx = function(pathParam){
 				auth:{
 					prefix: "/auth",
 					successRedirect: "/home",
-					failureRedirect: "/"
+					failureRedirect: "/",
+					facebook:{
+						appId: null,
+						appSecret: null
+					},
+					twitter:{
+						consumerKey: null,
+						consumerSecret: null
+					}
 				},
 				session:
 				{
