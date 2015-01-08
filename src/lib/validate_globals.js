@@ -18,6 +18,6 @@ number.integer = function(v){
 	return number(v) && ((v % 1) == 0);
 }
 
-global.bool = function(obj){
-	return (typeof obj) == "boolean";
+global.bool = function(v){
+	return (typeof v) == "boolean";
 }

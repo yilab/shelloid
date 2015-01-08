@@ -31,7 +31,7 @@ function validateStructure(obj, typeDef){
 			return false;
 		}
 		if(utils.isFunction(type)){
-			if(!type(v)){
+			if(!type(v, obj)){
 				return false;
 			}
 		}else if(utils.isArray(type)){
