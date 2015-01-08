@@ -20,14 +20,6 @@ String.prototype.startsWith = function (str){
     return this.indexOf(str) == 0;
 };
 
-global.OptionalParam = function(val){
-	this.val = val;
-}
-
-global.optional = function(val){
-	return new OptionalParam(val);
-}
-
 var utils = lib_require("utils");
 
 exports.loadAppConfig = function(appCtx){

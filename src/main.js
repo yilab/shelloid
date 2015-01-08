@@ -23,7 +23,8 @@ var loader = lib_require("loader"),
 	route = lib_require("route"),
 	app   = lib_require("app"),
 	auth = lib_require("auth"),
-	app_pkg = lib_require("app_pkg");
+	app_pkg = lib_require("app_pkg"),
+	validate_globals = lib_require("validate_globals");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");

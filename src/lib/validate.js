@@ -24,11 +24,14 @@ function validateStructure(obj, typeDef){
 	for(var k in obj){
 		var type = typeDef[k];
 		var v = obj[k];
+		if(type && type.constructor == OptionalParam){
+			type = type.value;
+		}
 		if(!type){
 			return false;
 		}
-		if(utils.isString(type)){
-			if(typeof v != type){
+		if(utils.isFunction(type)){
+			if(!type(v)){
 				return false;
 			}
 		}else if(utils.isArray(type)){
@@ -52,9 +55,10 @@ function validateStructure(obj, typeDef){
 			}else{
 				return false;
 			}
-		}
-		
+		}		
 	}	
 	
 	return true;
 }
+
+exports.validateStructure = validateStructure;
