@@ -20,6 +20,14 @@ String.prototype.startsWith = function (str){
     return this.indexOf(str) == 0;
 };
 
+global.OptionalParam = function(val){
+	this.val = val;
+}
+
+global.optional = function(val){
+	return new OptionalParam(val);
+}
+
 var utils = lib_require("utils");
 
 exports.loadAppConfig = function(appCtx){
@@ -79,7 +87,8 @@ exports.serverCtx = function(pathParam){
 		packageJson: packageJson,
 		constants : {
 			routesDir: "routes", 
-			authDir: "auth"
+			authDir: "auth",
+			interfacesDir: "interfaces"
 		},
 		appCtx :{
 			hasErrors: false,
@@ -89,9 +98,11 @@ exports.serverCtx = function(pathParam){
 			packageJsonModified: false,
 			routes: [],
 			authMods : [],
+			interfaces: {},
 			folders: {
-				routes: null,
-				authMods: null
+				routes: null, //filled in at runtime
+				authMods: null, //filled in at runtime
+				interfaces: null,//filled in at runtime
 			},
 			app: null,
 			config: {

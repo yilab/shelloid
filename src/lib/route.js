@@ -8,13 +8,14 @@
  You must not remove this notice, or any other, from this software.
  */
 
-var utils = lib_require("utils");
+var utils = lib_require("utils"),
+	validate = 	lib_require("validate");
 
 exports.addAll = function(appCtx){
 	var routes = appCtx.routes;
 	var i;
 	for(i=0;i < routes.length; i++){
-		var ok = module.exports.add(appCtx.app, routes[i]);
+		var ok = module.exports.add(appCtx, routes[i]);
 		if(!ok){
 			appCtx.hasErrors = true;
 		}
@@ -22,12 +23,13 @@ exports.addAll = function(appCtx){
 	return i;
 }
 
-exports.add = function(app, ctrl){
-	var urlPath = ctrl.url;
-	if(ctrl.annotations["path"]){
-		urlPath = ctrl.annotations["path"];
-	}else if(ctrl.annotations["pathSuffix"]){
-		var pathSuffix = ctrl.annotations["pathSuffix"];
+exports.add = function(appCtx, route){
+	var app = appCtx.app;
+	var urlPath = route.url;
+	if(route.annotations["path"]){
+		urlPath = route.annotations["path"];
+	}else if(route.annotations["pathSuffix"]){
+		var pathSuffix = route.annotations["pathSuffix"];
 		if(pathSuffix.startsWith("/")){
 			urlPath = urlPath + pathSuffix;
 		}else{
@@ -35,8 +37,8 @@ exports.add = function(app, ctrl){
 		}
 	}
 	var method = ["all"];
-	if(ctrl.annotations["method"]){
-		method = ctrl.annotations["method"];
+	if(route.annotations["method"]){
+		method = route.annotations["method"];
 	}
 	
 	if(!utils.isArray(method)){
@@ -44,20 +46,11 @@ exports.add = function(app, ctrl){
 	}
 	
 	for(var i=0;i<method.length;i++){
-		var fn;
-		var logSuffix = "";
+
+		var fn = routeWrapper(route, appCtx);
 			
-		if(ctrl.type == "auth" || ctrl.annotations.noauth){
-			fn = ctrl.fn;
-			if(ctrl.type != "auth"){
-				logSuffix = "Authentication disabled with @noauth";
-			}
-		}else{
-			fn = authWrapper(ctrl);
-		}
-			
-		console.log("Mounting " + ctrl.relPath + 
-					" (" + ctrl.fnName + ") at " + urlPath + " (" + method[i] + "). " + logSuffix);
+		console.log("Mounting " + route.relPath + 
+					" (" + route.fnName + ") at " + urlPath + " (" + method[i] + "). ");
 						
 		app[method[i]](urlPath, fn);
 	}
@@ -65,13 +58,31 @@ exports.add = function(app, ctrl){
 	return true;
 }
 
-function authWrapper(authMod){
+function routeWrapper(route, appCtx){
+	var doAuth = true;
+	var isAuthRoute = (route.type == "auth");
+	
+	if(isAuthRoute || route.annotations.noauth){
+		doAuth = false;
+		if(route.type != "auth"){
+			console.log("Authentication disabled with @noauth for " + route.relPath + " (" + 
+						route.fnName + ")");
+		}
+	}
+	
+	var ifc = appCtx.interfaces[route.relPath + "/req"];
+			
 	return function(req, res){
-		if(req.user){
-			authMod.fn(req, res);
-		}else{
+		if(doAuth && !req.user){
 			res.status(401).send('Unauthorized');
 			console.log("Unauthenticated access to: " + authMod.relPath + " (" + authMod.fnName + ")");
+			return;
+		}else{
+			if(isAuthRoute || validate.requestOk(req, ifc)){
+				authMod.fn(req, res);
+			}else{
+				res.status(400).send("Bad Request");
+			}
 		}
 	}
 }

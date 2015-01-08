@@ -55,6 +55,10 @@ function authModsLoaded(){
 }
 
 function authModsAdded(){
+	loader.loadInterfaces(serverCtx, interfacesLoaded);
+}
+
+function interfacesLoaded(){
 	loader.loadRoutes(serverCtx, routesLoaded);
 }
 

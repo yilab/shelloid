@@ -17,7 +17,7 @@ exports.loadRoutes = function(serverCtx, done)
 	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.routesDir;
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.routes = p;	
-	loadModules(serverCtx, p, "routes", serverCtx.appCtx.routes, done);
+	loadModules(serverCtx, p, "route", serverCtx.appCtx.routes, done);
 }
 
 exports.loadAuthMods = function(serverCtx, done)
@@ -26,6 +26,14 @@ exports.loadAuthMods = function(serverCtx, done)
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.authMods = p;	
 	loadModules(serverCtx, p, "auth", serverCtx.appCtx.authMods, done);
+}
+
+exports.loadInterfaces = function(serverCtx, done)
+{
+	var p = serverCtx.appCtx.basePath + "/" + serverCtx.constants.interfacesDir;
+	p = path.normalize(p);
+	serverCtx.appCtx.folders.interfaces = p;	
+	loadModules(serverCtx, p, "interface", serverCtx.appCtx.interfaces, done);
 }
 
 function loadModules(serverCtx, modPath, modType, mods, done){	
@@ -51,15 +59,21 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 								url = url + "/" + f;
 							}
 							if(!annotations[f].ignore){
-								mods.push({
-									type: modType,
-									fn: m[f],
-									fnName: f,
-									annotations: annotations[f],
-									path: pathInfo.path,
-									relPath : pathInfo.relPath,
-									url: url
-								});
+								var mod = 
+									{
+										type: modType,
+										fn: m[f],
+										fnName: f,
+										annotations: annotations[f],
+										path: pathInfo.path,
+										relPath : pathInfo.relPath,
+										url: url
+									};
+								if(modType == "interface"){
+									mods[mod.relPath] = mod;
+								}else{
+									mods.push(mod);
+								}
 							}else{
 								console.log("Ignoring app module with @ignore: " + 
 																pathInfo.relPath + " (" + f + ")");
