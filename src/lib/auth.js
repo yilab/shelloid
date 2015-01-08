@@ -125,7 +125,8 @@ function configureLocalAuth(appCtx, authMod){
 		},
 		fn: routeFn,
 		fnName: "localauth()",
-		relPath: "_internal"
+		relPath: "_internal",
+		type: "auth"
 	};
 	appCtx.routes.push(route);
 }
@@ -195,7 +196,8 @@ function configureProviderAuth(appCtx, authMod, provider){
 		},
 		fn: passport.authenticate(provider),
 		fnName: 'passport.authenticate("' + provider + '")',
-		relPath: "_internal"
+		relPath: "_internal",
+		type: "auth"
 	};
 	
 	var returnRoute = {
@@ -205,7 +207,8 @@ function configureProviderAuth(appCtx, authMod, provider){
 		},
 		fn: routeFn,
 		fnName: '_internal',
-		relPath: "_internal"
+		relPath: "_internal",
+		type: "auth"
 	};
 		
 	appCtx.routes.push(route);

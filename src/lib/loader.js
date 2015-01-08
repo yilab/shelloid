@@ -52,6 +52,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 							}
 							if(!annotations[f].ignore){
 								mods.push({
+									type: modType,
 									fn: m[f],
 									fnName: f,
 									annotations: annotations[f],

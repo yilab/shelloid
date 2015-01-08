@@ -34,22 +34,45 @@ exports.add = function(app, ctrl){
 			urlPath = urlPath + "/" + pathSuffix;
 		}
 	}
-	var method = "all";
+	var method = ["all"];
 	if(ctrl.annotations["method"]){
 		method = ctrl.annotations["method"];
 	}
 	
-	if(utils.isArray(method)){
-		for(var i=0;i<method.length;i++){
-			console.log("Mounting " + ctrl.relPath + 
-						" (" + ctrl.fnName + ") at " + urlPath + " (" + method[i] + ")");		
-			app[method[i]](urlPath, ctrl.fn);
+	if(!utils.isArray(method)){
+		method = [method];
+	}
+	
+	for(var i=0;i<method.length;i++){
+		var fn;
+		var logSuffix = "";
+			
+		if(ctrl.type == "auth" || ctrl.annotations.noauth){
+			fn = ctrl.fn;
+			if(ctrl.type != "auth"){
+				logSuffix = "Authentication disabled with @noauth";
+			}
+		}else{
+			fn = authWrapper(ctrl);
 		}
-	}else{
+			
 		console.log("Mounting " + ctrl.relPath + 
-					" (" + ctrl.fnName + ") at " + urlPath + " (" + method + ")");
-		app[method](urlPath, ctrl.fn);
+					" (" + ctrl.fnName + ") at " + urlPath + " (" + method[i] + "). " + logSuffix);
+						
+		app[method[i]](urlPath, fn);
 	}
 	
 	return true;
 }
+
+function authWrapper(authMod){
+	return function(req, res){
+		if(req.user){
+			authMod.fn(req, res);
+		}else{
+			res.status(401).send('Unauthorized');
+			console.log("Unauthenticated access to: " + authMod.relPath + " (" + authMod.fnName + ")");
+		}
+	}
+}
+
