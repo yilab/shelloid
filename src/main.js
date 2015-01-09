@@ -37,6 +37,7 @@ var serverCtx = init.serverCtx(process.argv[2]);
 init.loadAppConfig(serverCtx.appCtx);
 
 app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
+sys_require(serverCtx);//initialize sys_require.
 
 function app_pkg_initDone(err){
 	if(err){

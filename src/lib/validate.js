@@ -34,7 +34,7 @@ function typeOk(obj, typeDef, config){
 	for(var k in obj){
 		var type = typeDef[k];
 		var v = obj[k];
-		if(type && type.constructor == OptionalParam){
+		if(type && type.constructor == sh.OptionalParam){
 			type = type.value;
 		}
 		if(!type){

@@ -96,6 +96,10 @@ exports.isObject = function(obj){
 	return toString.call(param) == "[object Object]";
 }
 
+exports.isFunction = function(obj){
+	return (typeof route.validate) == "function";
+}
+
 exports.countingBarrier = function(count, done){
 	if(count <= 0){
 		process.nextTick(done);

@@ -11,7 +11,7 @@
 var validate = lib_require("validate");
 var moment = require("moment");
 
-global.OptionalParam = function(val){
+function OptionalParam(val){
 	this.value = val;
 }
 
@@ -49,6 +49,10 @@ global.date = function(v, config){
 	else if(config.dateIsDate)
 		return m.toDate();
 	return true;	
+}
+
+global.any = function(){
+	return true;
 }
 
 num.integer = function(v){
