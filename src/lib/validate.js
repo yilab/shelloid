@@ -18,13 +18,13 @@ exports.requestOk = function(req, ifc, appCtx){
 	}
 
 	if(req.body && ifc && ifc.body){
-		if(!typeOk(req.body, ifc.body, appCtx.config)){
+		if(!typeOk(req.body, ifc.body, appCtx.config, req)){
 			return false;
 		}
 	}
 	
 	if(req.query && ifc && ifc.query){
-		if(!typeOk(req.query, ifc.query, appCtx.config)){
+		if(!typeOk(req.query, ifc.query, appCtx.config, req)){
 			return false;
 		}
 	}
@@ -59,17 +59,34 @@ var shortContentTypes = {
 	"file" : "multipart/form-data"
 };
 
-function typeOk(obj, typeDef, config){
+function typeError(opath, req, requiredType, paramNotFound){
+	if(!requiredType){
+		if(paramNotFound){
+			console.log("Invalid request to: " + req.url + 
+						". Required parameter: " + opath + " not found");
+		}else{
+			console.log("Invalid request to: " + req.url + 
+						". Unexpected parameter: " + opath + " found");		
+		}
+	}else{
+		console.log("Invalid request to: " + req.url + ". Bad parameter type: " + 
+					opath + ". Required: " + requiredType);	
+	}
+}
+
+function typeOk(obj, typeDef, config, req, opath){
 	for(var k in typeDef){
 		if(!typeDef.hasOwnProperty(k)){
 			continue;
 		}
 		if( (typeDef[k].constructor.name != "OptionalParam") && !obj[k]){
+			typeError(opath, req, false, true);
 			return false;
 		}
 	}
 
 	for(var k in obj){
+		opath = opath ? opath + "." + k : k;
 		if(!obj.hasOwnProperty(k)){
 			continue;
 		}	
@@ -79,26 +96,30 @@ function typeOk(obj, typeDef, config){
 			type = type.value;
 		}
 		if(!type){
+			typeError(opath, req, false, false);	
 			return false;
 		}
 		if(utils.isFunction(type)){
-			var r = type(v, config)
+			var r = type(v, config);
 			if(!r){
+				typeError(opath, req, type.typename);	
 				return false;
 			}else if(!bool(r)){
 				obj[k] = r;
 			}
 		}else if(utils.isArray(type)){
 			if(type.length <= 0){
+				typeError(opath, req, "empty array");
 				return false;
 			}
 			if(utils.isArray(v)){
 				for(var i=0;i<v.length;i++){
-					if(!typeOk(v, type[0], config)){
+					if(!typeOk(v, type[0], config, req, opath + "[" + i + "]")){
 						return false;
 					}
 				}
 			}else{
+				typeError(opath, req, "array");			
 				return false;
 			}
 		}else if(utils.isObject(type)){
@@ -107,6 +128,7 @@ function typeOk(obj, typeDef, config){
 					return false;
 				}
 			}else{
+				typeError(opath, req, "object");
 				return false;
 			}
 		}		

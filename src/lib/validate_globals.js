@@ -23,17 +23,25 @@ global.str = function(v){
 	return toString.call(v) == '[object String]';
 }
 
+str.typename = "str";
+
 global.num = function(v){
 	return (typeof v) == "number";
 }
+
+num.typename = "num";
 
 global.array = function(v){
 	return v.constructor == Array;
 }
 
+array.typename = "array";
+
 global.bool = function(v){
 	return (typeof v) == "boolean";
 }
+
+bool.typename = "bool";
 
 global.date = function(v, config){
 	if(!str(v)){
@@ -51,50 +59,65 @@ global.date = function(v, config){
 	return true;	
 }
 
+date.typename = "date";
+
 global.any = function(){
 	return true;
 }
+any.typename = "any";
 
 num.integer = function(v){
 	return num(v) && ((v % 1) == 0);
 }
+num.integer.typename = "num.integer";
 
 num.integer.range = function(from, to){
-	return function(v){
+	var f = function(v){
 		return num.integer(v) && v >= from && v <= to;
 	}
+	f.typename = "num.integer.range(" + from + "," + to + ")";	
+	return f;	
 }
 
 num.integer.max = function(to){
-	return function(v){
+	var f= function(v){
 		return num.integer(v) && v <= to;
-	}
+	};
+	f.typename = "num.integer.max(" + to + ")";	
+	return f;
 }
 
 num.integer.min = function(from){
-	return function(v){
+	var f= function(v){
 		return num.integer(v) && v >= from;
-	}
+	};
+	f.typename = "num.integer.min(" + from + ")";	
+	return f;
 }
 
 num.range = function(from, to){
-	return function(v){
+	var f = function(v){
 		return num(v) && v >= from && v <= to;
-	}
+	};
+	f.typename = "num.range(" + from + "," + to + ")";
+	return f;
 }
 
 num.max = function(to){
-	return function(v){
+	var f = function(v){
 		return num(v) && v <= to;
-	}
+	};
+	f.typename = "num.max(" + to + ")";
+	return f;
 }
 
 num.min = function(from){
-	return function(v){
+	var f = function(v){
 		return num(v) && v >= from;
-	}
+	};
+	f.typename = "num.min(" + from + ")";
+	return f;
 }
-
 
 array.bounded = function(spec, max){
 	if(num(spec)){
@@ -102,7 +125,10 @@ array.bounded = function(spec, max){
 		spec = false;
 	}
 	
-	return function(v, typeDef){
+	var f = 
+	function(v, typeDef){
 		return array(v) && v.length <= max && (!spec || validate.typeOk(v, spec));
-	}	
+	};
+	f.typename = "array.bounded(" + max + ")";
+	return f;
 }
