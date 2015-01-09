@@ -16,7 +16,7 @@
     "security",
     "web",
     "service",
-    "OWASP"
+    "OWASP"	
   ],
   "author": "Jayaraj Poroor",
   "license": "LGPL 3.0",
@@ -41,6 +41,7 @@
 	"passport" : "0.2.1",
 	"sessionstore" : "1.0.5",
 	"npm" : "1.4.28",
-	"moment": "2.9.0"
+	"moment": "2.9.0",
+	"validator": "3.27.0"
   }  
 }

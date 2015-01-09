@@ -10,6 +10,7 @@
 
 var validate = lib_require("validate");
 var moment = require("moment");
+var validator = require("validator");
 
 function OptionalParam(val){
 	this.value = val;
@@ -24,6 +25,34 @@ global.str = function(v){
 }
 
 str.typename = "str";
+
+str.safe = function(v){
+	return str(v) && !v.test(/[<>\r\n\"\';,]/);
+}
+
+str.email = function(v){
+	return str(v) && validator.isEmail(v);
+}
+
+str.url = function(v){
+	return str(v) && validator.isURL(v);
+}
+
+str.alpha = function(v){
+	return str(v) && validator.isAlpha(v);
+}
+
+str.alphanumeric = function(v){
+	return str(v) && validator.isAlphanumeric(v);
+}
+
+str.ip = function(v){
+	return str(v) && validator.isIP(v);
+}
+
+str.creditcard = function(v){
+	return str(v) && validator.isCreditCard(v);
+}
 
 global.num = function(v){
 	return (typeof v) == "number";
