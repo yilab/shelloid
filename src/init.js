@@ -46,6 +46,9 @@ exports.loadAppConfig = function(appCtx){
 		utils.mkdirIfNotExists(config.uploadsDir, 
 							"Uploads directory: " + config.uploadsDir + 
 							"(" + config.uploadsDir+ ") does not exist. Trying to create one.");
+
+		config._logFile = config.logFile;
+		config.logFile = utils.joinIfRelative(config.dataDir, config.logFile);
 		
 		config.baseUrl = config.proto + "://" + config.domain;
 		if(!((config.port == 80 && config.proto == "http") && 
@@ -93,6 +96,7 @@ exports.serverCtx = function(pathParam){
 			authDir: "auth",
 			interfacesDir: "interfaces"
 		},
+		directLog: true,
 		appCtx :{
 			hasErrors: false,
 			basePath: appBasePath,
@@ -109,12 +113,14 @@ exports.serverCtx = function(pathParam){
 			},
 			app: null,
 			config: {
+				enableCluster: false,
 				domain: "localhost",
 				proto: "http",
 				port: 8080,
 				baseUrl: null, //computed dynamically
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
+				logFile : "shelloid.log", //relative to dataDir
 				dateFormat: "moment",//moment, date, string
 				dateIsDate: false, dateIsMoment: true,//boolean values for faster runtime processing
 				auth:{
