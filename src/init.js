@@ -87,7 +87,7 @@ exports.serverCtx = function(pathParam){
 	{
 		packageJsonPath : packageJsonPath,
 		packageJson: packageJson,
-		basePath: path.normalize(path.join(__dirname, "../)),
+		basePath: path.normalize(path.join(__dirname, "/..")),
 		constants : {
 			routesDir: "routes", 
 			authDir: "auth",

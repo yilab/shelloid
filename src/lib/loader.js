@@ -48,13 +48,13 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 	
 	for(var i=0;i<files.length;i++){
 		if(files[i].path.endsWith(".js")){
-			console.log("Processing: " + files[i].path);
+			console.log("Processing: " + files[i].path + " (" + modType + ")" );
 			annotation.parseAnnotations(serverCtx, files[i],  
 				function(pathInfo, annotations){
 					var url = pathToURL(pathInfo.path, modPathLength);			
 					var m = require(pathInfo.path);
 					for(f in m){
-						if(m.hasOwnProperty(f) && (typeof m[f]) == 'function'){
+						if(m.hasOwnProperty(f)){
 							if(f != "index"){
 								url = url + "/" + f;
 							}
@@ -70,7 +70,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 										url: url
 									};
 								if(modType == "interface"){
-									mods[mod.relPath] = mod;
+									mods[mod.relPath + "/" + f] = mod;
 								}else{
 									mods.push(mod);
 								}

@@ -11,30 +11,71 @@
 var utils = lib_require("utils");
 
 exports.requestOk = function(req, ifc, appCtx){	
-	var validated = true;
-	
-	if(req.body && ifc && ifc.body){
-		validated = typeOk(req.body, ifc.body, appCtx.config);
-	}
-	
-	if(req.query && ifc && ifc.query){
-		validated = typeOk(req.query, ifc.query, appCtx.config);
-	}
-	
-	return validated;
-}
 
-function typeOk(obj, typeDef, config){
-	for(var k in typeDef){
-		if(obj[k].constructor != OptionalParam){
+	var contentType = getContentType(ifc);
+	if(contentType && (req.headers["content-type"] != contentType)){
+		return false;
+	}
+
+	if(req.body && ifc && ifc.body){
+		if(!typeOk(req.body, ifc.body, appCtx.config)){
 			return false;
 		}
 	}
 	
+	if(req.query && ifc && ifc.query){
+		if(!typeOk(req.query, ifc.query, appCtx.config)){
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+exports.getContentType = getContentType;
+
+function getContentType(ifc){
+	if(ifc){
+		var contentType = false;
+		if(ifc.contentType){
+			contentType = ifc.contentType;
+			if(shortContentTypes[contentType]){
+				contentType = shortContentTypes[contentType];
+			}			
+		}else
+		if(utils.isObject(ifc.body)){
+			contentType = "application/json";
+		}
+		return contentType;
+	}else{
+		return false;
+	}
+}
+
+var shortContentTypes = {
+	"json" : "application/json",
+	"html" : "text/html",
+	"text" : "text/plain",
+	"file" : "multipart/form-data"
+};
+
+function typeOk(obj, typeDef, config){
+	for(var k in typeDef){
+		if(!typeDef.hasOwnProperty(k)){
+			continue;
+		}
+		if( (typeDef[k].constructor.name != "OptionalParam") && !obj[k]){
+			return false;
+		}
+	}
+
 	for(var k in obj){
+		if(!obj.hasOwnProperty(k)){
+			continue;
+		}	
 		var type = typeDef[k];
 		var v = obj[k];
-		if(type && type.constructor == sh.OptionalParam){
+		if(type && type.constructor.name == "OptionalParam"){
 			type = type.value;
 		}
 		if(!type){

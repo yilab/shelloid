@@ -93,11 +93,11 @@ exports.isArray = function(obj){
 }
 
 exports.isObject = function(obj){
-	return toString.call(param) == "[object Object]";
+	return toString.call(obj) == "[object Object]";
 }
 
 exports.isFunction = function(obj){
-	return (typeof route.validate) == "function";
+	return (typeof obj) == "function";
 }
 
 exports.countingBarrier = function(count, done){

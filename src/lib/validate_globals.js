@@ -96,7 +96,7 @@ num.min = function(from){
 }
 
 
-array.bounded(spec, max){
+array.bounded = function(spec, max){
 	if(num(spec)){
 		max = spec;
 		spec = false;
