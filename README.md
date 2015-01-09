@@ -24,7 +24,9 @@ Currently the software is in very early alpha stage with featured being added on
 Meanwhile you could try this to get an idea of the platform:
 
 npm install -g shelloid
+
 git clone https://github.com/shelloid/shelloid-sample-app.
+
 shelloid shelloid-sample-app
 
 This will start up the web application at port 8080. You can take a look at the sample application structure.
