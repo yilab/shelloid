@@ -1,20 +1,30 @@
+/*
+ Copyright (c) Shelloid Systems LLP. All rights reserved.
+ The use and distribution terms for this software are covered by the
+ GNU Lesser General Public License 3.0 (https://www.gnu.org/licenses/lgpl.html)
+ which can be found in the file LICENSE at the root of this distribution.
+ By using this software in any fashion, you are agreeing to be bound by
+ the terms of this license.
+ You must not remove this notice, or any other, from this software.
+ */
+
 var utils = lib_require("utils");
 
-exports.requestOk = function(req, ifc){	
-	var structOk = true;
+exports.requestOk = function(req, ifc, appCtx){	
+	var validated = true;
 	
 	if(req.body && ifc && ifc.body){
-		validateStructure(req.body, ifc.body);
+		validated = typeOk(req.body, ifc.body, appCtx.config);
 	}
 	
 	if(req.query && ifc && ifc.query){
-		validateStructure(req.query, ifc.query);
+		validated = typeOk(req.query, ifc.query, appCtx.config);
 	}
 	
-	return structOk;
+	return validated;
 }
 
-function validateStructure(obj, typeDef){
+function typeOk(obj, typeDef, config){
 	for(var k in typeDef){
 		if(obj[k].constructor != OptionalParam){
 			return false;
@@ -31,8 +41,11 @@ function validateStructure(obj, typeDef){
 			return false;
 		}
 		if(utils.isFunction(type)){
-			if(!type(v, obj)){
+			var r = type(v, config)
+			if(!r){
 				return false;
+			}else if(!bool(r)){
+				obj[k] = r;
 			}
 		}else if(utils.isArray(type)){
 			if(type.length <= 0){
@@ -40,7 +53,7 @@ function validateStructure(obj, typeDef){
 			}
 			if(utils.isArray(v)){
 				for(var i=0;i<v.length;i++){
-					if(!validateStructure(v, type[0])){
+					if(!typeOk(v, type[0], config)){
 						return false;
 					}
 				}
@@ -49,7 +62,7 @@ function validateStructure(obj, typeDef){
 			}
 		}else if(utils.isObject(type)){
 			if(utils.isObject(v)){
-				if(!validateStructure(v, type)){
+				if(!typeOk(v, type, config)){
 					return false;
 				}
 			}else{
@@ -61,4 +74,4 @@ function validateStructure(obj, typeDef){
 	return true;
 }
 
-exports.validateStructure = validateStructure;
+exports.typeOk = typeOk;

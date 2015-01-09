@@ -10,6 +10,7 @@
  You must not remove this notice, or any other, from this software.
  */
 global.lib_require = require("./lib/lib_require.js");
+global.sys_require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
 
 var http = require('http'),
 	path = require("path");

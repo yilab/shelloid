@@ -78,7 +78,7 @@ function routeWrapper(route, appCtx){
 			console.log("Unauthenticated access to: " + authMod.relPath + " (" + authMod.fnName + ")");
 			return;
 		}else{
-			if(isAuthRoute || validate.requestOk(req, ifc)){
+			if(isAuthRoute || validate.requestOk(req, ifc, appCtx)){
 				authMod.fn(req, res);
 			}else{
 				res.status(400).send("Bad Request");

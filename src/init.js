@@ -52,6 +52,16 @@ exports.loadAppConfig = function(appCtx){
 			(config.port == 443 && config.proto == "https"))){
 			config.baseUrl = config.baseUrl + ":" + config.port;
 		}
+		
+		config.dateIsString = true;
+		if(config.dateFormat == "moment"){
+			config.dateIsMoment = true;
+		}else 
+		if(config.dateFormat == "date"){
+			config.dateIsDate = true;
+		}
+	}else{
+		console.log("Application config file does not exist. Using defaults");
 	}
 }
 
@@ -77,6 +87,7 @@ exports.serverCtx = function(pathParam){
 	{
 		packageJsonPath : packageJsonPath,
 		packageJson: packageJson,
+		basePath: path.normalize(path.join(__dirname, "../)),
 		constants : {
 			routesDir: "routes", 
 			authDir: "auth",
@@ -104,6 +115,8 @@ exports.serverCtx = function(pathParam){
 				baseUrl: null, //computed dynamically
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
+				dateFormat: "moment",//moment, date, string
+				dateIsDate: false, dateIsMoment: true,//boolean values for faster runtime processing
 				auth:{
 					prefix: "/auth",
 					successRedirect: "/home",
