@@ -11,7 +11,7 @@
 var assert = require("assert");
 var npm = require("npm");
 var fs = require("fs");
-
+var cluster = require("cluster");
 var utils = lib_require("utils");
 
 var appCtx;
@@ -43,6 +43,13 @@ exports.require = function(pkgName, pkgVersion, done){
 		var m = require(pkgPath);
 		done(m);
 	}else{
+		if(shelloid.serverCtx.appCtx.config.enableCluster){
+			console.log("Missing application packages exist. " + 
+			 "Disable cluster mode and run once to automatically install the packages. " + 
+			 " After this you may re-enable cluster mode.");
+			process.exit(0);
+		}
+		
 		if(pkgVersion != "*"){
 			pkgName = pkgName + "@" + pkgVersion;
 		}
