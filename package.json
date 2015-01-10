@@ -1,6 +1,6 @@
 {
   "name": "shelloid",
-  "version": "0.0.7-alpha",
+  "version": "0.0.8-alpha",
   "description": "Simple and secure Node.js web application server.",
   "main": "src/main.js",
   "scripts": {
@@ -42,6 +42,7 @@
 	"sessionstore" : "1.0.5",
 	"npm" : "1.4.28",
 	"moment": "2.9.0",
-	"validator": "3.27.0"
+	"validator": "3.27.0",
+	"generic-pool": "2.1.1"
   }  
 }

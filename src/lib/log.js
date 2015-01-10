@@ -17,5 +17,5 @@ shelloid.warn = function(msg){
 }
 
 shelloid.error = function(msg){
-	shelloid.log("error", msg);
+	shelloid.log("error", sh.caller(msg));
 }

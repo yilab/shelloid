@@ -21,7 +21,7 @@ var http = require('http'),
 	winston = require('winston');
 
 /*require/init order is important*/
-
+var obj =  lib_require("obj");
 var	init = require("./init.js");
 
 var log = lib_require("log");
@@ -32,7 +32,8 @@ var loader = lib_require("loader"),
 	app   = lib_require("app"),
 	auth = lib_require("auth"),
 	app_pkg = lib_require("app_pkg"),
-	validate_globals = lib_require("validate_globals");
+	validate_globals = lib_require("validate_globals"),
+	dbconfig = lib_reqire("dbconfig");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
@@ -91,8 +92,16 @@ function app_pkg_initDone(err){
 		process.exit(0);
 	}else{
 		serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
-		loader.loadAuthMods(serverCtx, authModsLoaded);
+		dbInit();
 	}
+}
+
+function dbInit(){
+	dbconfig.init(serverCtx, loadAuthMods);
+}
+
+function loadAuthMods(){
+	loader.loadAuthMods(serverCtx, authModsLoaded);
 }
 
 function authModsLoaded(){		

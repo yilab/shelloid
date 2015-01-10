@@ -110,8 +110,7 @@ function routeWrapper(route, appCtx){
 		
 		req.assert = function(cond){
 			if(!cond){
-				throw(new ValidateError("Assertion failed in function " + __caller_function + 
-									"("+__caller_file +":" + __caller_line+")"));
+				throw(new ValidateError(sh.caller("Assertion failed in function")));
 			}
 		};
 		

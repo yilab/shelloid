@@ -23,6 +23,24 @@ get: function() {
     }
 });
 
+Object.defineProperty(global, '__caller2_line', {
+get: function() {
+        return __stack[3].getLineNumber();
+    }
+});
+
+Object.defineProperty(global, '__caller2_function', {
+get: function() {
+        return __stack[3].getFunctionName();
+    }
+});
+
+Object.defineProperty(global, '__caller2_file', {
+get: function() {
+        return __stack[3].getFileName();
+    }
+});
+
 Object.defineProperty(global, '__caller_line', {
 get: function() {
         return __stack[2].getLineNumber();
@@ -58,3 +76,22 @@ get: function() {
         return __stack[1].getFileName();
     }
 });
+
+shelloid.caller = function(str){
+	if(!str){
+		str = "";
+	}else{
+		str = ": " + str;
+	}
+	__caller2_file +":" + __caller2_line+"("+__caller2_function + ")" + str;
+}
+
+shelloid.loc = function(str){
+	if(!str){
+		str = "";
+	}else{
+		str = ": " + str;
+	}
+	__caller_file +":" + __caller_line+"("+__caller_function + ")" + str;
+}
+

@@ -96,6 +96,8 @@ exports.serverCtx = function(pathParam){
 			authDir: "auth",
 			interfacesDir: "interfaces"
 		},
+		pools:{
+		},
 		directLog: true,
 		appCtx :{
 			hasErrors: false,

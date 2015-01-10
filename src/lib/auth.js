@@ -53,45 +53,31 @@ function addAuthMod(appCtx, authMod, barrier){
 		return;
 	}
 	
-	var authTypes = authMod.annotations.auth;
-	if(!utils.isArray(authTypes)){
-		authTypes = [authTypes];
+	var authType = authMod.annotations.auth;
+	
+	if(!utils.isString(authType)){
+		console.log("@auth annotation must be a string: " + authMod.relPath);		
+		appCtx.hasErrors = true;
+		barrier.countDown();
+		return;
 	}
 	
-	var innerBarrier = utils.countingBarrier(authTypes.length, 
-		function()
-		{
-			barrier.countDown();
-		}
-	);
-	
-	for(var i=0;i<authTypes.length;i++){
-		var authType = authTypes[i];
-		if(!utils.isString(authType)){
-			console.log("@auth annotation must be a string or an array of strings: " 
-				+ authMod.relPath);		
-			appCtx.hasErrors = true;
-			innerBarrier.countDown();
-		}
+	var modInfo = passportModules[authType];//might not exist!
 		
-		var modInfo = passportModules[authType];//might not exist!
-		
-		if(!modInfo){
-			console.log("Don't know how to process the authentication module: " + authMod.relPath 
-				+ " with @auth entry: " + authType);
-			appCtx.hasErrors = true;
-			innerBarrier.countDown();		
-		}else{
-			app_pkg.require(modInfo.name, modInfo.version, 
-				function(mod){
-					authMod.passportMod = mod;
-					modInfo.configure(appCtx, authMod, authType);
-					innerBarrier.countDown();
-				}
-			);		
-		}		
-	}
-
+	if(!modInfo){
+		console.log("Don't know how to process the authentication module: " + authMod.relPath 
+			+ " with @auth entry: " + authType);
+		appCtx.hasErrors = true;
+		barrier.countDown();		
+	}else{
+		app_pkg.require(modInfo.name, modInfo.version, 
+			function(mod){
+				authMod.passportMod = mod;
+				modInfo.configure(appCtx, authMod, authType);
+				barrier.countDown();
+			}
+		);		
+	}		
 }
 
 function configureLocalAuth(appCtx, authMod){
