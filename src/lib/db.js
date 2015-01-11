@@ -186,7 +186,7 @@ EasyDb.prototype.execute = function (options) {
     );
 };
 
-module.exports = function (name) {
+exports.get = function (name) {
 	var config = shelloid.serverCtx.appCtx.config.databases[name];
 	if(!config){
 		throw new Error(sh.caller("Unknown DB name: " + name));
