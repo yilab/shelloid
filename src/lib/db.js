@@ -20,7 +20,14 @@ function void installQueryHandlers(easyDb){
 				if (easyDb.successH.length < easyDb.queries.length){
 					easyDb.successH.push(null);			
 				}
-				easyDb.queries.push({gen: genFn, name: fName});
+				var param = genFn;
+				if(!utils.isFunction(genFn)){
+					 if(easyDb.queries.length > 0){
+						throw new Error(sh.caller("Expecting a query generator function."));
+					}
+					param = Array.prototype.splice.call(arguments);
+				}
+				easyDb.queries.push({param: param, name: fName});
 				easyDb.lastCallWasQuery = easyDb;
 				return easyDb;
 			}
@@ -88,10 +95,14 @@ function _execute_queries(easyDb) {
         return;
     }
 
-    var queryF = easyDb.queries.shift();
-    var query = queryF.gen(); //generate query
+    var queryInfo = easyDb.queries.shift();
+    var queryParam = queryInfo.param; 
+	if(utils.isFunction(queryParam)){
+		queryParam = queryParam();//generate the query
+	}
+	
 	var callback = 
-        function (err, res) {
+        function (err) {
             if (err) {
                 logger.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
                 if (easyDb.errorH)
@@ -102,7 +113,7 @@ function _execute_queries(easyDb) {
                 var proceed = true;
                 if (successF) {
                     try {
-                        successF(res);
+                        successF.apply(null, Array.prototype.splice.call(arguments, 1));
                     }
                     catch (e) {
                         if (easyDb.errorH)
@@ -116,11 +127,12 @@ function _execute_queries(easyDb) {
                 }
             }
         };
-	var queryFn = easyDb.proxy[queryF.name);
-	if(queryFn){
-		easyDb.proxy[queryF.name](query, callback);
+	var proxyFnName = "$"+queryInfo.name;
+	if(easyDb.proxy[proxyFnName]){
+		queryParam.push(callback);
+		easyDb.proxy[proxyFnName].apply(easyDb.proxy, queryParam);
 	}else{
-		easyDb.proxy.query(queryF.name, query, callback);
+		easyDb.proxy.query(queryInfo.name, queryParam, callback);
 	}    
 }
 

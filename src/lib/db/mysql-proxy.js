@@ -1,4 +1,4 @@
-var genericPool = require('generic-pool'),
+var proxyBase = lib_require("proxy-base");
 var support;
 
 exports.init(supportThis){
@@ -10,42 +10,33 @@ exports.createProxy(client){
 }
 
 exports.createPool = function(config){
-	var pool = genericPool.Pool({
-		name: config.name,
-		create: function (callback) {
-			var c = support.mod.createConnection(
-				{
-					host: config.host,
-					user: config.user,
-					password: config.password,
-					database: config.database,
-					timezone: "+0000"
-				});
-			c.connect();
-			callback(null, c);
-		},
-		destroy: function (client) {
+	var mysql = support.mod;
+	var createFn = 	function (callback) {
+		var c = mysql.createConnection(
+			{
+				host: config.host,
+				user: config.user,
+				password: config.password,
+				database: config.database,
+				timezone: "+0000"
+			}
+		);
+		c.connect();
+		callback(null, c);
+	};
+
+	var destroyFn = function (client) {
 			client.end();
-		},
-		max: config.maxConnections ? config.maxConnections : 50,
-		min: config.minConnections ? config.minConnections : 2,
-		idleTimeoutMillis: config.idleTimeoutMillis ? config.idleTimeoutMillis : 30000,
-		log: config.log
-	});
-	return pool;
+	};
+	
+	return proxyBase.createPool(config, createFn, destroyFn);
 }
 
 function MysqlProxy(client){
-	this.client = client;
+	proxyBase.ProxyBase.call(this, client);
 }
 
-MysqlProxy.prototype.setClient(client){
-	this.client = client;
-}
-
-MysqlProxy.prototype.getClient(){
-	return this.client;
-}
+MysqlProxy.prototype = Object.create(proxyBase.ProxyBase.prototype);
 
 MysqlProxy.prototype.$startTransaction(callback){
     this.client.query("START TRANSACTION", callback);	
@@ -61,8 +52,4 @@ MysqlProxy.prototype.$rollback(callback){
 
 MysqlProxy.prototype.$query(query, callback){
     this.client.query(query.query, query.params, callback);	
-}
-
-MysqlProxy.prototype.query(name, obj, callback){
-	this.client[name](obj, callback);
 }
