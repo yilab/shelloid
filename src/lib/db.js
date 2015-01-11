@@ -3,19 +3,31 @@ function EasyDb(config) {
     this.successH = [];
     this.errorH = null;
     this.alwaysH = null;
-    this.proxy = null;
+	this.config = config;
+    this.proxy = this.config.support.createProxy();
     this.transaction = false;
     this.doneH = null;
-    this.config = config;
+	installQueryHandlers(this);
 }
 
-EasyDb.prototype.query = function (q) {
-    if (this.successH.length < this.queries.length)
-        this.successH.push(null);
-    this.queries.push(q);
-    this.lastCallWasQuery = true;
-    return this;
-};
+function void installQueryHandlers(easyDb){
+    easyDb.config = config;	
+	for(var k in easyDb.proxy){
+		if(this.proxy.hasOwnProperty(k) && k.startsWith("$")){
+			var fn = easyDb.proxy[k];
+			var fName = k.substring(1);
+			this[fName] = function(genFn){
+				if (easyDb.successH.length < easyDb.queries.length){
+					easyDb.successH.push(null);			
+				}
+				easyDb.queries.push({gen: genFn, name: fName});
+				easyDb.lastCallWasQuery = easyDb;
+				return easyDb;
+			}
+		}
+	}
+
+}
 
 EasyDb.prototype.success = function (s) {
     this.successH.push(s);
@@ -43,13 +55,14 @@ EasyDb.prototype.clear = function () {
         this.alwaysH();
     this.config.pool.release(this.client);
     this.transaction = false;
-    this.client = null;
+    this.proxy.setClient(null);
 };
 
 
 EasyDb.prototype.cancel = function () {//cancel pending queries.
     this.queries = [];
     this.successH = [];
+	this.clear();//ADDED
 };
 
 function _execute_queries(easyDb) {
@@ -76,9 +89,9 @@ function _execute_queries(easyDb) {
     }
 
     var queryF = easyDb.queries.shift();
-    var query = queryF(); //generate query
-    easyDb.proxy.query(query.query, query.params,
-        function (err, rows) {
+    var query = queryF.gen(); //generate query
+	var callback = 
+        function (err, res) {
             if (err) {
                 logger.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
                 if (easyDb.errorH)
@@ -89,7 +102,7 @@ function _execute_queries(easyDb) {
                 var proceed = true;
                 if (successF) {
                     try {
-                        successF(rows);
+                        successF(res);
                     }
                     catch (e) {
                         if (easyDb.errorH)
@@ -102,8 +115,13 @@ function _execute_queries(easyDb) {
                     _execute_queries(easyDb);
                 }
             }
-        }
-    );
+        };
+	var queryFn = easyDb.proxy[queryF.name);
+	if(queryFn){
+		easyDb.proxy[queryF.name](query, callback);
+	}else{
+		easyDb.proxy.query(queryF.name, query, callback);
+	}    
 }
 
 function _rollback_txn(easyDb) {
@@ -134,7 +152,7 @@ EasyDb.prototype.execute = function (options) {
                 easyDb.clear();
             }
             else {
-                easyDb.proxy = easyDb.config.support.createProxy(client);
+                easyDb.proxy.setClient(client);
                 easyDb.transaction = options.transaction ? options.transaction : false;
                 if (easyDb.transaction) {
                     proxy.startTransaction(

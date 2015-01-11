@@ -39,18 +39,30 @@ function MysqlProxy(client){
 	this.client = client;
 }
 
-MysqlProxy.prototype.startTransaction(callback){
+MysqlProxy.prototype.setClient(client){
+	this.client = client;
+}
+
+MysqlProxy.prototype.getClient(){
+	return this.client;
+}
+
+MysqlProxy.prototype.$startTransaction(callback){
     this.client.query("START TRANSACTION", callback);	
 }
 
-MysqlProxy.prototype.commit(callback){
+MysqlProxy.prototype.$commit(callback){
     this.client.query("COMMIT", callback);	
 }
 
-MysqlProxy.prototype.rollback(callback){
+MysqlProxy.prototype.$rollback(callback){
     this.client.query("ROLLBACK", callback);	
 }
 
-MysqlProxy.prototype.query(query, params, callback){
-    this.client.query(query, params, callback);	
+MysqlProxy.prototype.$query(query, callback){
+    this.client.query(query.query, query.params, callback);	
+}
+
+MysqlProxy.prototype.query(name, obj, callback){
+	this.client[name](obj, callback);
 }
