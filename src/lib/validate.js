@@ -9,6 +9,7 @@
  */
 
 var utils = lib_require("utils");
+var util = require("util");
 
 exports.requestOk = function(req, ifc, appCtx){	
 
@@ -51,34 +52,39 @@ exports.responseOk = function(req, res, obj, ifc, appCtx){
 }
 
 function genericCheck(obj, config, req, res, opath){
-	if(!config.safeStrings) return;//currently the only check.
-
-	if(utils.isString(f) && !str.safe(f)){
-		console.log("Unsafe string found (at: " + opath + ") in response to: " + req.url);
-		return false;
-	}
-
-	for(var k in obj){
-		if(!obj.hasOwnProperty(k)){
-			continue;
-		}
-		
-		opath = opath ? opath + "." + k : k;
-		
-		var f = obj[k];
-		if(utils.isString(f) && !str.safe(f)){
-			console.log("Unsafe string found (at: " + opath + ") in response to: " + req.url);
+	
+	if(!config.safeStrings) return true;//currently the only check.	
+	
+	if(utils.isString(obj)){
+		if(!str.safe(obj)){
+			console.log("Unsafe string found (at: " + opath + ") in response to: " + req.url + 
+				". String: " + obj);
 			return false;
-		}else		
-		if(utils.isObject(f)){
-			genericCheck(f, config, req, res, opath);
-		}else
-		if(utils.isArray(f)){
-			for(var i=0;i<f.length;i++){
-				genericCheck(f[i], config, req, res, opath + "[" + i+ "]");
+		}
+		return true;
+	}else
+	if(utils.isObject(obj)){
+		for(var k in obj){
+			if(!obj.hasOwnProperty(k)){
+				continue;
+			}			
+			opath = opath ? opath + "." + k : k;
+			
+			if(!genericCheck(obj[k], config, req, res, opath)){
+				return false;
 			}
-		}		
-	}
+		}
+		return true;
+	}else
+	if(utils.isArray(obj)){
+		for(var i=0;i<obj.length;i++){
+			if(!genericCheck(obj[i], config, req, res, opath + "[" + i+ "]")){
+				return false;
+			}
+		}
+		return true;
+	}		
+	/*shouldn't get here*/
 	return true;
 }
 
@@ -127,7 +133,7 @@ function typeError(opath, req, requiredType, paramNotFound){
 function typeOk(obj, typeDef, config, req, res, opath){
 
 	if(utils.isFunction(typeDef)){
-		var r = typeDef(v, config);
+		var r = typeDef(obj, config);
 		if(!r){
 			typeError(opath, req, typeDef.typename);	
 			return false;
@@ -140,66 +146,74 @@ function typeOk(obj, typeDef, config, req, res, opath){
 		}
 	}
 	
-	for(var k in typeDef){
-		if(!typeDef.hasOwnProperty(k)){
-			continue;
-		}
-		if( (typeDef[k].constructor.name != "OptionalParam") && !obj[k]){
-			typeError(opath, req, false, true);
+	if(utils.isObject(obj)){
+		if(!utils.isObject(typeDef)){
+			typeError(opath, req, typename(typeDef) );
 			return false;
 		}
-	}
-
-	for(var k in obj){
-		opath = opath ? opath + "." + k : k;
-		if(!obj.hasOwnProperty(k)){
-			continue;
-		}	
-		var type = typeDef[k];
-		var v = obj[k];
-		if(type && type.constructor.name == "OptionalParam"){
-			type = type.value;
+		for(var k in typeDef){
+			if(!typeDef.hasOwnProperty(k)){
+				continue;
+			}
+			if( (typeDef[k].constructor.name != "OptionalParam") && !obj[k]){
+				typeError(opath, req, false, true);
+				return false;
+			}
 		}
-		if(!type){
-			typeError(opath, req, false, false);	
-			return false;
-		}
-		if(utils.isFunction(type)){
-			var r = type(v, config);
-			if(!r){
-				typeError(opath, req, type.typename);	
-				return false;
-			}else if(r !== true){
-				obj[k] = r;
-			}
-		}else if(utils.isArray(type)){
-			if(type.length <= 0){
-				typeError(opath, req, "empty array");
-				return false;
-			}
-			if(utils.isArray(v)){
-				for(var i=0;i<v.length;i++){
-					if(!typeOk(v, type[0], config, req, res, opath + "[" + i + "]")){
-						return false;
-					}
-				}
-			}else{
-				typeError(opath, req, "array");			
-				return false;
-			}
-		}else if(utils.isObject(type)){
-			if(utils.isObject(v)){
-				if(!typeOk(v, type, config, req, res, opath)){
-					return false;
-				}
-			}else{
-				typeError(opath, req, "object");
-				return false;
-			}
-		}		
-	}	
 	
-	return true;
+		for(var k in obj){
+			opath = opath ? opath + "." + k : k;
+			if(!obj.hasOwnProperty(k)){
+				continue;
+			}	
+			var type = typeDef[k];
+			var v = obj[k];
+			if(type && type.constructor.name == "OptionalParam"){
+				type = type.value;
+			}
+			if(!type){
+				typeError(opath, req, false, false);	
+				return false;
+			}
+			if(!typeOk(v, type, config, req, res, opath)){
+				return false;
+			}
+		}
+		return true;
+	}else
+	if(utils.isArray(obj)){
+		if(!utils.isArray(typeDef)){
+			typeError(opath, req, typename(typeDef) );
+			return false;
+		}
+		if(typeDef.length == 0 && obj.length > 0){
+			typeError(opath, req, "empty array");
+			return false;
+		}
+		for(var i=0;i<obj.length;i++){
+			if(!typeOk(obj[i], type[0], config, req, res, opath + "[" + i + "]")){
+				return false;
+			}
+		}
+		return true;
+	}else{	
+		typeError(opath, req, typename(typeDef));	
+		return false;
+	}
 }
 
 exports.typeOk = typeOk;
+
+function typename(t){
+	if(utils.isFunction(t)){
+		return t.typename;
+	}else
+	if(utils.isArray(t)){
+		return "array";
+	}else
+	if(utils.isObject(t)){
+		return "obj";
+	}else{
+		return "<unknown type:" + t + ">";
+	}	
+}

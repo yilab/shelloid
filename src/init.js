@@ -21,7 +21,7 @@ String.prototype.startsWith = function (str){
 };
 
 shelloid.getDBConfig = function(dbname){
-	return shelloid.serverCtx.appCtx.config.databases[name];
+	return shelloid.serverCtx.appCtx.config.databases[dbname];
 }
 
 var utils = lib_require("utils");

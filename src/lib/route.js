@@ -90,19 +90,14 @@ function routeWrapper(route, appCtx){
 	
 	return function(req, res){
 		req.validated = function(){
-			res.send_ = res.send;
-			res.send = function(obj){
-				if(checkResponseObject(req, res, obj, ifcRes, appCtx)){
-					res.send_(obj);
-				}
-			};
 			res.json_ = res.json;
+			res.render_ = res.render;
 			res.json = function(obj){
 				if(checkResponseObject(req, res, obj, ifcRes, appCtx)){
 					res.json_(obj);
 				}
 			};			
-			res.render_ = res.render;
+
 			res.render = function(p1, p2, p3){
 				if(!utils.isObject(p2) || checkResponseObject(req, res, p2, ifcRes, appCtx)){
 					res.render_(p1, p2, p3); 
@@ -134,7 +129,7 @@ function routeWrapper(route, appCtx){
 							console.log("System Error: " +er);
 							//TODO probably initiate system shutdown?
 						}
-						res.status(400).send("Bad Request");
+						res.status(400).end("Bad Request");
 					});
 					d.run(function(){
 						route.validate(req);
@@ -143,7 +138,7 @@ function routeWrapper(route, appCtx){
 					req.validated();
 				}
 			}else{
-				res.status(400).send("Bad Request");
+				res.status(400).end("Bad Request");
 			}
 		}
 	}
@@ -159,7 +154,7 @@ function checkResponseObject(req, res, obj, ifcRes, appCtx){
 		res.set("Content-Type", contentType);
 	}
 	if(!validate.responseOk(req, res, obj, ifcRes, appCtx)){
-		res.status(500).send_("Server Error: Bad Response!");	
+		res.status(500).end("Server Error: Bad Response!");	
 		return false;
 	}
 	return true;

@@ -42,6 +42,9 @@ exports.newInstance = function(appCtx){
 			}
 		})
 	);
+	var sessionOptions = appCtx.config.session.options || {};
+	sessionOptions.dbname = appCtx.config.session.store;
+	
 	app.use(
 		session({
 			resave: true,
@@ -53,9 +56,7 @@ exports.newInstance = function(appCtx){
 				maxAge: null,
 				path: '/'
 			},
-			store: sessionStore.createSessionStore({
-				dbname: appCtx.config.session.store
-			})
+			store: sessionStore.createSessionStore(sessionOptions)
 		})
 	);	
 	app.use(passport.initialize());

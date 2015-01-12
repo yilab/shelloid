@@ -28,7 +28,7 @@ global.str = function(v){
 str.typename = "str";
 
 str.safe = function(v){
-	return str(v) && !v.test(/[<>\r\n\"\';,]/);
+	return str(v) && !/[<>\r\n\"\';,]/.test(v);
 }
 
 str.email = function(v){

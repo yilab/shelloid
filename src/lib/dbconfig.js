@@ -5,7 +5,7 @@ exports.init = function(serverCtx, done){
 	var types = [];
 	var databases = serverCtx.appCtx.config.databases;
 	for(var k in  databases){
-		if(!serverCtx.appCtx.databases.hasOwnProperty(k)){
+		if(!databases.hasOwnProperty(k)){
 			continue;
 		}
 		var type = databases[k].type;
@@ -24,28 +24,32 @@ exports.init = function(serverCtx, done){
 	
 	var dbModulesLoaded = function(){
 		for(var k in  databases){
-			if(!serverCtx.appCtx.databases.hasOwnProperty(k)){
+			if(!databases.hasOwnProperty(k)){
 				continue;
 			}
-			var config = serverCtx.appCtx.databases[k];
+			var config = databases[k];
 			var support = databaseSupport[config.type];
 			config.support = support;
-			modProxy.init(support);//might be called multiple times for the same proxy module - no harm done.
-			config.pool = support.createPool(config);			
+			config.pool = support.modProxy.createPool(config);			
 		}
+		done();
 	}
 	var barrier = utils.countingBarrier(types.length, dbModulesLoaded);
 	
 	for(var i=0;i<types.length;i++){
 		var support = databaseSupport[types[i]];
-		(function(supportThis){
+		(function(supportThis, supportType){
+			supportThis.type = supportType;
 			app_pkg.require(supportThis.modName, supportThis.modVersion,
 				function(mod){
 					supportThis.mod = mod;
+					supportThis.modProxy = lib_require("db/"+supportType + "-proxy");
+					supportThis.modProxy.init(support);
+					sh.info("Database module type " + supportType + " loaded.");
 					barrier.countDown();
-				}				
+				}
 			);		
-		})(support);
+		})(support, types[i]);
 	}
 }
 
@@ -54,13 +58,13 @@ var databaseSupport = {
 		modName: "mysql",
 		modVersion: "*",
 		mod: null,//loaded dynamically
-		modProxy: require("./db/mysql-proxy.js")
+		modProxy: null
 	},
 	"redis" : {
 		modName: "redis",
 		modVersion: "0.12.1",
 		mod: null,//loaded dynamically
-		modProxy: require("./db/redis-proxy.js")
+		modProxy: null
 	}
 	
 };

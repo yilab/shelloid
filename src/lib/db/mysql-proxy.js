@@ -11,6 +11,8 @@ exports.createProxy = function(client){
 
 exports.createPool = function(config){
 	var mysql = support.mod;
+	config.port = config.port ? config.port : 3306;
+	config.host = config.host ? config.host : "localhost";	
 	var createFn = 	function (callback) {
 		var c = mysql.createConnection(
 			{

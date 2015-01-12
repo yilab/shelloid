@@ -49,24 +49,25 @@ exports.require = function(pkgName, pkgVersion, done){
 			 " After this you may re-enable cluster mode.");
 			process.exit(0);
 		}
-		
+
+		var pkgVersionedName = pkgName;
 		if(pkgVersion != "*"){
-			pkgName = pkgName + "@" + pkgVersion;
+			pkgVersionedName = pkgName + "@" + pkgVersion;
 		}
-		console.log("Installing application package: " + pkgName);
+		console.log("Installing application package: " + pkgVersionedName);
 		appCtx.packageJson.dependencies[pkgName] = pkgVersion;
 		
 		utils.writeJsonSync(appCtx.packageJsonPath, appCtx.packageJson);
 		appCtx.packageJsonModified = true;
 		
-		npm.commands.install(appCtx.basePath, [pkgName], 
+		npm.commands.install(appCtx.basePath, [pkgVersionedName], 
 			function (err, data) {
 				if(err){
-					console.log("Error installing application package: " + pkgName + " : " + err);
+					console.log("Error installing application package: " + pkgVersionedName + " : " + err);
 					appCtx.hasErrors = true;
 					done(false);
 				}else{
-					console.log("Application package: " + pkgName + " successfully installed");
+					console.log("Application package: " + pkgVersionedName + " successfully installed");
 					var m = require(pkgPath);
 					done(m);	
 				}				
