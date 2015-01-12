@@ -19,7 +19,7 @@ var express = require('express'),
 	passport = require("passport");
 
 exports.newInstance = function(appCtx){
-	var staticPath = path.join(appCtx.basePath, 'public');
+	var staticPath = path.join(appCtx.basePath, appCtx.config.dirs.pub);
 	var sessionName = appCtx.config.session.name;
 	var sessionSecret = appCtx.config.session.secret;
 	var uploadsDir = appCtx.config.uploadsDir;

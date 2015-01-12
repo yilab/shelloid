@@ -39,20 +39,20 @@ exports.loadAppConfig = function(appCtx){
 		}
 			
 		var config = appCtx.config = utils.merge(appCtx.config, config);
-		assert(config.dataDir !== undefined);
-		config._dataDir = config.dataDir;//save for later reference
-		config.dataDir = utils.joinIfRelative(appCtx.basePath, config.dataDir);
-		utils.mkdirIfNotExists(config.dataDir, 
-								"Data directory: " + config._dataDir + 
-								"(" + config.dataDir+ ") does not exist. Trying to create one.");								
-		config._uploadsDir = config.uploadsDir;
-		config.uploadsDir = utils.joinIfRelative(config.dataDir, config.uploadsDir);
-		utils.mkdirIfNotExists(config.uploadsDir, 
-							"Uploads directory: " + config.uploadsDir + 
-							"(" + config.uploadsDir+ ") does not exist. Trying to create one.");
+		assert(config.dirs.data !== undefined);
+		config.dirs._data = config.dirs.data;//save for later reference
+		config.dirs.data = utils.joinIfRelative(appCtx.basePath, config.dirs.data);
+		utils.mkdirIfNotExists(config.dirs.data, 
+								"Data directory: " + config.dirs._data + 
+								"(" + config.dirs.data+ ") does not exist. Trying to create one.");								
+		config.dirs._uploads = config.dirs.uploads;
+		config.dirs.uploads = utils.joinIfRelative(config.dirs.data, config.dirs.uploads);
+		utils.mkdirIfNotExists(config.dirs.uploads, 
+							"Uploads directory: " + config.dirs.uploads + 
+							"(" + config.dirs.uploads+ ") does not exist. Trying to create one.");
 
 		config.log._file = config.log.file;
-		config.log.file = utils.joinIfRelative(config.dataDir, config.log.file);
+		config.log.file = utils.joinIfRelative(config.dirs.data, config.log.file);
 		
 		config.baseUrl = config.proto + "://" + config.domain;
 		if(!((config.port == 80 && config.proto == "http") && 
@@ -91,11 +91,6 @@ exports.serverCtx = function(pathParam){
 		packageJsonPath : packageJsonPath,
 		packageJson: packageJson,
 		basePath: path.normalize(path.join(__dirname, "/..")),
-		constants : {
-			routesDir: "routes", 
-			authDir: "auth",
-			interfacesDir: "interfaces"
-		},
 		pools:{
 		},
 		directLog: true,
@@ -108,22 +103,28 @@ exports.serverCtx = function(pathParam){
 			routes: [],
 			authMods : [],
 			interfaces: {},
-			folders: {
-				routes: null, //filled in at runtime
-				authMods: null, //filled in at runtime
-				interfaces: null,//filled in at runtime
-			},
 			app: null,
+			folders:{
+				routes: null,
+				auth: null,
+				interfaces:null
+			},
 			config: {
+				dirs : {
+					routes: "src/routes", 
+					auth: "src/auth",
+					interfaces: "src/interfaces",
+					pub: "src/public",
+					data: "data",
+					uploads: "uploads"
+				},			
 				enableCluster: false,
 				domain: "localhost",
 				proto: "http",
 				port: 8080,
 				baseUrl: null, //computed dynamically
-				dataDir : "data",
-				uploadsDir : "uploads", //relative to dataDir
 				log:{
-					file : "shelloid.log", //relative to dataDir
+					file : "shelloid.log", //relative to data dir
 					level: "verbose"
 				},
 				validate:{
