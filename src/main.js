@@ -50,10 +50,13 @@ sys_require(serverCtx);//initialize sys_require.
 
 var numCPUs = os.cpus().length;
 
-serverCtx.directLog = false;
+if(cluster.isMaster){
+	winston.add(winston.transports.File, { filename: serverCtx.appCtx.config.log.file});
+	winston.transports.Console.level = serverCtx.appCtx.config.log.level;
+	winston.transports.File.level = serverCtx.appCtx.config.log.level;	
+}
 
 if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {
-	serverCtx.directLog = true;
 	console.log("Enabling Cluster: Starting workers");
 	cluster.setupMaster({ silent: false });
 	// Fork workers.
@@ -63,20 +66,14 @@ if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {
 	cluster.on('exit', function(worker, code, signal) {
 		console.log('Worker: ' + worker.process.pid + ' died. Exit code: ' + code);
 	});
-	
-	winston.add(winston.transports.File, { filename: serverCtx.appCtx.config.logFile});
-    
+	    
 	for(var k in cluster.workers){
 		var worker = cluster.workers[k];
 		worker.on("message", processWorkerMsg);
 	}
-}else if(!serverCtx.appCtx.config.enableCluster){
-	serverCtx.directLog = true;
 }
 
-if(!serverCtx.appCtx.config.enableCluster || !cluster.isMaster){
-	app_pkg.init(serverCtx.appCtx, app_pkg_initDone);//continue with loading/starting the server.
-}
+app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
 
 function processWorkerMsg(msg){
 	if(msg.isLog){
@@ -88,9 +85,10 @@ function processWorkerMsg(msg){
 
 function app_pkg_initDone(err){
 	if(err){
-		console.log("Server initialization error. Exiting.");
+		console.log("Server initialization error: " + err + "Exiting.");
 		process.exit(0);
 	}else{
+		sh.info("Application package manager initialization done.");	
 		serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
 		dbInit();
 	}
@@ -101,13 +99,16 @@ function dbInit(){
 }
 
 function loadAuthMods(){
+	sh.info("Database initialization done");
 	loader.loadAuthMods(serverCtx, authModsLoaded);
 }
 
 function authModsLoaded(){		
 	if(serverCtx.appCtx.authMods.length == 0){
-		console.log("No authentication modules found.");
+		sh.info("No authentication modules found.");
+		authModsAdded();
 	}else{
+		sh.info("Authentication modules loaded.");
 		auth.addAll(serverCtx.appCtx, authModsAdded);
 	}
 }

@@ -1,4 +1,4 @@
-var genericPool = require('generic-pool'),
+var genericPool = require('generic-pool');
 
 exports.createPool = function(config, createFn, destroyFn){
 	var pool = genericPool.Pool({
@@ -17,15 +17,15 @@ function ProxyBase(client){
 	this.client = client;
 }
 
-ProxyBase.prototype.setClient(client){
+ProxyBase.prototype.setClient = function(client){
 	this.client = client;
 }
 
-ProxyBase.prototype.getClient(){
+ProxyBase.prototype.getClient = function(){
 	return this.client;
 }
 
-ProxyBase.prototype.genericQuery(name, params, callback){
+ProxyBase.prototype.genericQuery = function(name, params, callback){
 	params.push(callback);
 	this.client[name].apply(null, params);
 }

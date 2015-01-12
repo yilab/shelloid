@@ -1,11 +1,11 @@
 var support;
 var proxyBase = lib_require("db/proxy-base");
 
-exports.init(supportThis){
+exports.init = function(supportThis){
 	support = supportThis;
 }
 
-exports.createProxy(client){
+exports.createProxy = function(client){
 	return new RedisProxy(client);
 }
 
@@ -20,7 +20,7 @@ exports.createPool = function(config){
 			callback(err, client);
 		});
 		client.on("error", function (err) {
-			sh.log.error(sh.loc("Redis error for instance: " config.name + ": "  + err));
+			sh.log.error(sh.loc("Redis error for instance: " +config.name + ": "  + err));
 		});
 	};
 

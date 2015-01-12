@@ -51,8 +51,8 @@ exports.loadAppConfig = function(appCtx){
 							"Uploads directory: " + config.uploadsDir + 
 							"(" + config.uploadsDir+ ") does not exist. Trying to create one.");
 
-		config._logFile = config.logFile;
-		config.logFile = utils.joinIfRelative(config.dataDir, config.logFile);
+		config.log._file = config.log.file;
+		config.log.file = utils.joinIfRelative(config.dataDir, config.log.file);
 		
 		config.baseUrl = config.proto + "://" + config.domain;
 		if(!((config.port == 80 && config.proto == "http") && 
@@ -122,7 +122,10 @@ exports.serverCtx = function(pathParam){
 				baseUrl: null, //computed dynamically
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
-				logFile : "shelloid.log", //relative to dataDir
+				log:{
+					file : "shelloid.log", //relative to dataDir
+					level: "verbose"
+				},
 				validate:{
 					req:{
 						dateFormat: "moment",//moment, date, string

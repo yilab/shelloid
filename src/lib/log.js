@@ -1,10 +1,12 @@
 var cluster = require("cluster");
+var winston = require("winston");
+ 
 shelloid.log = function(level, msg){
 	if(cluster.isWorker){
 		var msg = {isLog: true, logLevel: level, logMsg: msg};
 		process.send(msg);
 	}else{
-		winston.log(msg.logLevel, msg.logMsg);
+		winston.log(level, msg);
 	}
 }
 

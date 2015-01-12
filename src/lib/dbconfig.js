@@ -1,13 +1,14 @@
-var process = require("process");
-var app_pkg = lib_require("app_pkg");
+var app_pkg = lib_require("app_pkg"),
+	utils = lib_require("utils");
 
 exports.init = function(serverCtx, done){
 	var types = [];
-	for(var k in  serverCtx.appCtx.databases){
+	var databases = serverCtx.appCtx.config.databases;
+	for(var k in  databases){
 		if(!serverCtx.appCtx.databases.hasOwnProperty(k)){
 			continue;
 		}
-		var type = serverCtx.appCtx.databases[k].type;
+		var type = databases[k].type;
 		if(!types.indexOf(type) >= 0){
 			if(databaseSupport[type]){
 				types.push(type);
@@ -17,12 +18,12 @@ exports.init = function(serverCtx, done){
 			}
 		}
 	}
-	if(serverCtx.appCtx.hasErrors){
+	if(types.length == 0 || serverCtx.appCtx.hasErrors){
 		process.nextTick(done);
 	}
 	
 	var dbModulesLoaded = function(){
-		for(var k in  serverCtx.appCtx.databases){
+		for(var k in  databases){
 			if(!serverCtx.appCtx.databases.hasOwnProperty(k)){
 				continue;
 			}
@@ -33,7 +34,7 @@ exports.init = function(serverCtx, done){
 			config.pool = support.createPool(config);			
 		}
 	}
-	var barrier = countingBarrier(types.length, dbModulesLoaded);
+	var barrier = utils.countingBarrier(types.length, dbModulesLoaded);
 	
 	for(var i=0;i<types.length;i++){
 		var support = databaseSupport[types[i]];
