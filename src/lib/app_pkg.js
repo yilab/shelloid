@@ -51,6 +51,9 @@ exports.require = function(pkgName, pkgVersion, done){
 		}
 
 		var pkgVersionedName = pkgName;
+		if(!pkgVersion){
+			pkgVersion = "*";
+		}
 		if(pkgVersion != "*"){
 			pkgVersionedName = pkgName + "@" + pkgVersion;
 		}

@@ -93,7 +93,6 @@ exports.serverCtx = function(pathParam){
 		basePath: path.normalize(path.join(__dirname, "/..")),
 		pools:{
 		},
-		directLog: true,
 		appCtx :{
 			hasErrors: false,
 			basePath: appBasePath,
@@ -110,11 +109,13 @@ exports.serverCtx = function(pathParam){
 				interfaces:null
 			},
 			config: {
+				viewEngine : "ejs",
 				dirs : {
 					routes: "src/routes", 
 					auth: "src/auth",
 					interfaces: "src/interfaces",
 					pub: "src/public",
+					views: "src/views",
 					data: "data",
 					uploads: "uploads"
 				},			
