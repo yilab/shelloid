@@ -11,6 +11,7 @@
 var validate = lib_require("validate");
 var moment = require("moment");
 var validator = require("validator");
+var util = require("util");
 
 function OptionalParam(val){
 	this.value = val;
@@ -67,24 +68,27 @@ global.array = function(v){
 array.typename = "array";
 
 global.bool = function(v){
-	return (typeof v) == "boolean";
+	return v === true || v === false;
 }
 
 bool.typename = "bool";
 
-global.date = function(v, config){
-	if(!str(v)){
+global.date = function(v, validateConfig){
+	var isMoment = moment.isMoment(v);
+	if(!( str(v) || isMoment || util.isDate(v))){
 		return false;
 	}
-	var m = moment(v);
+	var m = isMoment? v : moment(v);
 	if(!m.isValid()){
 		return false;
 	}
 	
-	if(config.dateIsMoment)
-		return m;
-	else if(config.dateIsDate)
+	if(validateConfig.dateFormatInt == 0)
+		return m.toString();
+	else if(validateConfig.dateFormatInt == 1)
 		return m.toDate();
+	else if(validateConfig.dateFormatInt == 2)
+		return m;
 	return true;	
 }
 

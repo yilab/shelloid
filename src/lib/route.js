@@ -92,18 +92,21 @@ function routeWrapper(route, appCtx){
 		req.validated = function(){
 			res.send_ = res.send;
 			res.send = function(obj){
-				if(ifcRes){
-					var contentType = validate.getContentType(ifcRes);
-					if(contentType){
-						res.set("Content-Type", contentType);
-					}
-					if(ifcRes.body){
-						if(!validate.typeOk(obj, ifcRes.body, appCtx.config)){
-							res.status(500).send_("Server Error: Bad Response!");
-						}
-					}
+				if(checkResponseObject(req, res, obj, ifcRes, appCtx)){
+					res.send_(obj);
 				}
-				res.send_(obj);
+			};
+			res.json_ = res.json;
+			res.json = function(obj){
+				if(checkResponseObject(req, res, obj, ifcRes, appCtx)){
+					res.json_(obj);
+				}
+			};			
+			res.render_ = res.render;
+			res.render = function(p1, p2, p3){
+				if(!utils.isObject(p2) || checkResponseObject(req, res, p2, ifcRes, appCtx)){
+					res.render_(p1, p2, p3); 
+				}
 			}
 			route.fn(req, res);
 		};
@@ -150,3 +153,14 @@ function ValidateError(msg){
 	this.msg = msg;
 }
 
+function checkResponseObject(req, res, obj, ifcRes, appCtx){
+	var contentType = validate.getContentType(ifcRes);
+	if(contentType){
+		res.set("Content-Type", contentType);
+	}
+	if(!validate.responseOk(req, res, obj, ifcRes, appCtx)){
+		res.status(500).send_("Server Error: Bad Response!");	
+		return false;
+	}
+	return true;
+}

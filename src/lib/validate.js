@@ -16,19 +16,69 @@ exports.requestOk = function(req, ifc, appCtx){
 	if(contentType && (req.headers["content-type"] != contentType)){
 		return false;
 	}
+	
+	if(!ifc){
+		return genericCheck(req.body, appCtx.config.validate.req, req) &&
+			   genericCheck(req.query, appCtx.config.validate.req, req);
+	}	
 
-	if(req.body && ifc && ifc.body){
-		if(!typeOk(req.body, ifc.body, appCtx.config, req)){
+	if(req.body && ifc.body){
+		if(!typeOk(req.body, ifc.body, appCtx.config.validate.req, req)){
 			return false;
 		}
 	}
 	
-	if(req.query && ifc && ifc.query){
-		if(!typeOk(req.query, ifc.query, appCtx.config, req)){
+	if(req.query && ifc.query){
+		if(!typeOk(req.query, ifc.query, appCtx.config.validate.req, req)){
 			return false;
 		}
 	}
 	
+	return true;
+}
+
+exports.responseOk = function(req, res, obj, ifc, appCtx){
+	if(!ifc){
+		return genericCheck(obj, appCtx.config.validate.res, req, res);
+	}
+	
+	if(ifc && ifc.body){
+		if(!validate.typeOk(obj, ifc.body, appCtx.config.validate.res, req, res)){
+			return false;
+		}
+	}
+	return true;
+}
+
+function genericCheck(obj, config, req, res, opath){
+	if(!config.safeStrings) return;//currently the only check.
+
+	if(utils.isString(f) && !str.safe(f)){
+		console.log("Unsafe string found (at: " + opath + ") in response to: " + req.url);
+		return false;
+	}
+
+	for(var k in obj){
+		if(!obj.hasOwnProperty(k)){
+			continue;
+		}
+		
+		opath = opath ? opath + "." + k : k;
+		
+		var f = obj[k];
+		if(utils.isString(f) && !str.safe(f)){
+			console.log("Unsafe string found (at: " + opath + ") in response to: " + req.url);
+			return false;
+		}else		
+		if(utils.isObject(f)){
+			genericCheck(f, config, req, res, opath);
+		}else
+		if(utils.isArray(f)){
+			for(var i=0;i<f.length;i++){
+				genericCheck(f[i], config, req, res, opath + "[" + i+ "]");
+			}
+		}		
+	}
 	return true;
 }
 
@@ -74,7 +124,22 @@ function typeError(opath, req, requiredType, paramNotFound){
 	}
 }
 
-function typeOk(obj, typeDef, config, req, opath){
+function typeOk(obj, typeDef, config, req, res, opath){
+
+	if(utils.isFunction(typeDef)){
+		var r = typeDef(v, config);
+		if(!r){
+			typeError(opath, req, typeDef.typename);	
+			return false;
+		}else{
+			if(r !== true){
+				return r;
+			}else{
+				return true;
+			}
+		}
+	}
+	
 	for(var k in typeDef){
 		if(!typeDef.hasOwnProperty(k)){
 			continue;
@@ -104,7 +169,7 @@ function typeOk(obj, typeDef, config, req, opath){
 			if(!r){
 				typeError(opath, req, type.typename);	
 				return false;
-			}else if(!bool(r)){
+			}else if(r !== true){
 				obj[k] = r;
 			}
 		}else if(utils.isArray(type)){
@@ -114,7 +179,7 @@ function typeOk(obj, typeDef, config, req, opath){
 			}
 			if(utils.isArray(v)){
 				for(var i=0;i<v.length;i++){
-					if(!typeOk(v, type[0], config, req, opath + "[" + i + "]")){
+					if(!typeOk(v, type[0], config, req, res, opath + "[" + i + "]")){
 						return false;
 					}
 				}
@@ -124,7 +189,7 @@ function typeOk(obj, typeDef, config, req, opath){
 			}
 		}else if(utils.isObject(type)){
 			if(utils.isObject(v)){
-				if(!typeOk(v, type, config)){
+				if(!typeOk(v, type, config, req, res, opath)){
 					return false;
 				}
 			}else{

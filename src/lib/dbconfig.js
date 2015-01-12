@@ -37,22 +37,29 @@ exports.init = function(serverCtx, done){
 	
 	for(var i=0;i<types.length;i++){
 		var support = databaseSupport[types[i]];
-		function(supportThis){
+		(function(supportThis){
 			app_pkg.require(supportThis.modName, supportThis.modVersion,
 				function(mod){
 					supportThis.mod = mod;
 					barrier.countDown();
 				}				
 			);		
-		}(support);
+		})(support);
 	}
 }
 
 var databaseSupport = {
 	"mysql" : {
-		modName: "node-mysql",
+		modName: "mysql",
 		modVersion: "*",
 		mod: null,//loaded dynamically
 		modProxy: require("./db/mysql-proxy.js")
+	},
+	"redis" : {
+		modName: "redis",
+		modVersion: "0.12.1",
+		mod: null,//loaded dynamically
+		modProxy: require("./db/redis-proxy.js")
 	}
+	
 };

@@ -60,13 +60,9 @@ exports.loadAppConfig = function(appCtx){
 			config.baseUrl = config.baseUrl + ":" + config.port;
 		}
 		
-		config.dateIsString = true;
-		if(config.dateFormat == "moment"){
-			config.dateIsMoment = true;
-		}else 
-		if(config.dateFormat == "date"){
-			config.dateIsDate = true;
-		}
+		var dateFormatInt = {"string": 0, "date": 1, "moment": 2};
+		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
+		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
 	}else{
 		console.log("Application config file does not exist. Using defaults");
 	}
@@ -127,8 +123,19 @@ exports.serverCtx = function(pathParam){
 				dataDir : "data",
 				uploadsDir : "uploads", //relative to dataDir
 				logFile : "shelloid.log", //relative to dataDir
-				dateFormat: "moment",//moment, date, string
-				dateIsDate: false, dateIsMoment: true,//boolean values for faster runtime processing
+				validate:{
+					req:{
+						dateFormat: "moment",//moment, date, string
+						dateFormatInt: 2,//int values for faster runtime processing
+										 //0: string, 1: date, 2: moment
+						safeStrings: true
+					},
+					res: {
+						dateFormat: "string",
+						dateFormatInt: 0,
+						safeStrings : true
+					}
+				},
 				auth:{
 					prefix: "/auth",
 					successRedirect: "/home",
@@ -146,7 +153,7 @@ exports.serverCtx = function(pathParam){
 				{
 					name: "connect.sid",
 					secret: "secret",
-					store : "inmemory",/*defaults to in-memory store. else give name of the database*/
+					store : null,/*defaults to in-memory store. else give name of the database*/
 				},
 				databases:
 				{

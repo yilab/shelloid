@@ -53,7 +53,9 @@ exports.newInstance = function(appCtx){
 				maxAge: null,
 				path: '/'
 			},
-			store: sessionStore.createSessionStore(appCtx.config.session.store)
+			store: sessionStore.createSessionStore({
+				dbname: appCtx.config.session.store
+			})
 		})
 	);	
 	app.use(passport.initialize());

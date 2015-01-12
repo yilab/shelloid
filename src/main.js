@@ -33,7 +33,7 @@ var loader = lib_require("loader"),
 	auth = lib_require("auth"),
 	app_pkg = lib_require("app_pkg"),
 	validate_globals = lib_require("validate_globals"),
-	dbconfig = lib_reqire("dbconfig");
+	dbconfig = lib_require("dbconfig");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
