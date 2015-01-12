@@ -11,29 +11,27 @@ function EasyDb(config) {
 }
 
 function void installQueryHandlers(easyDb){
-    easyDb.config = config;	
-	for(var k in easyDb.proxy){
-		if(this.proxy.hasOwnProperty(k) && k.startsWith("$")){
-			var fn = easyDb.proxy[k];
-			var fName = k.substring(1);
-			this[fName] = function(genFn){
+	var ops = easyDb.config.support.ops;
+	for(var i=0;i<ops.length; i++){
+		var currOp = ops[i];
+		function(op){
+			easyDb[op] = function(queryParam){
 				if (easyDb.successH.length < easyDb.queries.length){
 					easyDb.successH.push(null);			
 				}
-				var param = genFn;
-				if(!utils.isFunction(genFn)){
+				var param = queryParam;
+				if(!utils.isFunction(queryParam)){
 					 if(easyDb.queries.length > 0){
 						throw new Error(sh.caller("Expecting a query generator function."));
 					}
 					param = Array.prototype.splice.call(arguments);
 				}
-				easyDb.queries.push({param: param, name: fName});
-				easyDb.lastCallWasQuery = easyDb;
+				easyDb.queries.push({param: param, name: op});
+				easyDb.lastCallWasQuery = true;
 				return easyDb;
 			}
-		}
+		}(currOp);
 	}
-
 }
 
 EasyDb.prototype.success = function (s) {
@@ -127,12 +125,12 @@ function _execute_queries(easyDb) {
                 }
             }
         };
-	var proxyFnName = "$"+queryInfo.name;
-	if(easyDb.proxy[proxyFnName]){
+	var fnName = queryInfo.name;
+	if(easyDb.proxy[fnName]){
 		queryParam.push(callback);
-		easyDb.proxy[proxyFnName].apply(easyDb.proxy, queryParam);
+		easyDb.proxy[fnName].apply(easyDb.proxy, queryParam);
 	}else{
-		easyDb.proxy.query(queryInfo.name, queryParam, callback);
+		easyDb.proxy.genericQuery(fnName, queryParam, callback);
 	}    
 }
 

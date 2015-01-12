@@ -1,4 +1,4 @@
-var proxyBase = lib_require("proxy-base");
+var proxyBase = lib_require("db/proxy-base");
 var support;
 
 exports.init(supportThis){
@@ -32,24 +32,26 @@ exports.createPool = function(config){
 	return proxyBase.createPool(config, createFn, destroyFn);
 }
 
+exports.ops = ["startTransaction", "commit", "rollback", "query"];
+
 function MysqlProxy(client){
 	proxyBase.ProxyBase.call(this, client);
 }
 
 MysqlProxy.prototype = Object.create(proxyBase.ProxyBase.prototype);
 
-MysqlProxy.prototype.$startTransaction(callback){
+MysqlProxy.prototype.startTransaction(callback){
     this.client.query("START TRANSACTION", callback);	
 }
 
-MysqlProxy.prototype.$commit(callback){
+MysqlProxy.prototype.commit(callback){
     this.client.query("COMMIT", callback);	
 }
 
-MysqlProxy.prototype.$rollback(callback){
+MysqlProxy.prototype.rollback(callback){
     this.client.query("ROLLBACK", callback);	
 }
 
-MysqlProxy.prototype.$query(query, callback){
+MysqlProxy.prototype.query(query, callback){
     this.client.query(query.query, query.params, callback);	
 }

@@ -1,5 +1,6 @@
 {
   "name": "shelloid",
+  "author" : "jayaraj-poroor",
   "version": "0.0.8-alpha",
   "description": "Simple and secure Node.js web application server.",
   "main": "src/main.js",

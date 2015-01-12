@@ -25,7 +25,7 @@ ProxyBase.prototype.getClient(){
 	return this.client;
 }
 
-ProxyBase.prototype.query(name, params, callback){
+ProxyBase.prototype.genericQuery(name, params, callback){
 	params.push(callback);
 	this.client[name].apply(null, params);
 }
