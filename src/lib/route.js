@@ -108,7 +108,8 @@ function routeWrapper(route, appCtx){
 		
 		req.assert = function(cond){
 			if(!cond){
-				throw(new ValidateError(sh.caller("Assertion failed in function")));
+				var msg = sh.caller("Assertion failed in function");
+				throw(new ValidateError(msg));
 			}
 		};
 		
@@ -118,21 +119,20 @@ function routeWrapper(route, appCtx){
 			return;
 		}else{
 			if(isAuthRoute || validate.requestOk(req, ifcReq, appCtx)){
-				if(route.validate){
-					var d = require('domain');
+				if(ifcReq.validate){
+					var d = require('domain').create();
 					d.add(req);
 					d.add(res);
 					d.on('error', function(er) {
-						if(er.constructor == "ValidateError"){
-							console.log(er);
+						if(er.constructor.name == "ValidateError"){
+							sh.error("Validate Error: " + er.msg);
 						}else{
-							console.log("System Error: " +er);
-							//TODO probably initiate system shutdown?
+							sh.error("System Error: " + er.msg);
 						}
 						res.status(400).end("Bad Request");
 					});
 					d.run(function(){
-						route.validate(req);
+						ifcReq.validate(req);
 					});
 				}else{
 					req.validated();

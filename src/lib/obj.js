@@ -83,7 +83,8 @@ shelloid.caller = function(str){
 	}else{
 		str = ": " + str;
 	}
-	__caller2_file +":" + __caller2_line+"("+__caller2_function + ")" + str;
+	var fn = __caller2_function || "internal function";
+	return __caller2_file +":" + __caller2_line+"("+ fn + ")" + str;
 }
 
 shelloid.loc = function(str){
@@ -92,6 +93,7 @@ shelloid.loc = function(str){
 	}else{
 		str = ": " + str;
 	}
-	__caller_file +":" + __caller_line+"("+__caller_function + ")" + str;
+	var fn = __caller_function || "internal function";	
+	return __caller_file +":" + __caller_line+"("+ fn + ")" + str;
 }
 
