@@ -146,7 +146,7 @@ exports.serverCtx = function(pathParam){
 				{
 					name: "connect.sid",
 					secret: "secret",
-					store : null,/*defaults to in-memory store. else give name of the database*/
+					store : "inmemory",/*defaults to in-memory store. else give name of the database*/
 				},
 				databases:
 				{

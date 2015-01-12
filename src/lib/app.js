@@ -12,7 +12,7 @@ var express = require('express'),
 	cookieParser = require('cookie-parser'),
 	bodyParser = require('body-parser'),
 	session = require('express-session'),
-	sessionStore = require("sessionstore"),
+	sessionStore = require("shelloid-sessionstore"),
 	multer = require("multer"),
 	lusca = require("lusca"),
 	path = require("path"),
@@ -53,7 +53,7 @@ exports.newInstance = function(appCtx){
 				maxAge: null,
 				path: '/'
 			},
-			store: sessionStore.createSessionStore()
+			store: sessionStore.createSessionStore(appCtx.config.session.store)
 		})
 	);	
 	app.use(passport.initialize());
