@@ -10,11 +10,11 @@ function EasyDb(config) {
 	installQueryHandlers(this);
 }
 
-function void installQueryHandlers(easyDb){
+function installQueryHandlers(easyDb){
 	var ops = easyDb.config.support.ops;
 	for(var i=0;i<ops.length; i++){
 		var currOp = ops[i];
-		function(op){
+		(function(op){
 			easyDb[op] = function(queryParam){
 				if (easyDb.successH.length < easyDb.queries.length){
 					easyDb.successH.push(null);			
@@ -30,7 +30,7 @@ function void installQueryHandlers(easyDb){
 				easyDb.lastCallWasQuery = true;
 				return easyDb;
 			}
-		}(currOp);
+		})(currOp);
 	}
 }
 

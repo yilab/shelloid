@@ -20,6 +20,7 @@ exports.init = function(serverCtx, done){
 	}
 	if(types.length == 0 || serverCtx.appCtx.hasErrors){
 		process.nextTick(done);
+		return;
 	}
 	
 	var dbModulesLoaded = function(){
