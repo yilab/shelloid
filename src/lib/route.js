@@ -103,12 +103,17 @@ function routeWrapper(route, appCtx){
 					res.render_(p1, p2, p3); 
 				}
 			}
-			try{
-				route.fn(req, res);
-			}catch(err){
+			
+			var d0 = require('domain').create();
+			d0.add(req);
+			d0.add(res);
+			d0.on('error', function(err) {
 				sh.error(sh.caller("Error executing the controller: " + req.url + ". Error: " + err.stack));
 				res.status(500).end("Internal Server Error.");	
-			}
+			});
+			d0.run(function(){
+				route.fn(req, res);
+			});
 		};
 		
 		req.assert = function(cond){

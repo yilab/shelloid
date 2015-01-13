@@ -117,7 +117,7 @@ function _execute_queries(easyDb) {
                     }
                     catch (e) {
                         if (easyDb.errorH)
-                            easyDb.errorH(e.message);
+                            easyDb.errorH(e);
                         _rollback_txn(easyDb);
                         proceed = false;
                     }
@@ -175,12 +175,16 @@ EasyDb.prototype.execute = function (options) {
                                     easyDb.errorH(err);
                                 easyDb.clear();
                             } else {
-                                _execute_queries(easyDb);
+								process.nextTick(function(){
+									_execute_queries(easyDb);
+								});
                             }
                         }
                     );
                 } else
-                    _execute_queries(easyDb);
+					process.nextTick(function(){
+						_execute_queries(easyDb);
+					});
             }
         }
     );

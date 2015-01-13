@@ -17,7 +17,7 @@ Key features (at the moment):
 
 * Built in cluster support by setting a single configuration flag. Builtin logging with cluster support.
 
-* Simplified DB API with built-in connection pooling (work in progress).
+* Simplified DB API with built-in connection pooling.
 
 Currently the software is in very early alpha stage with featured being added on a daily (even hourly) basis. First full featured alpha release is expected to happen in a week or so. After that I will be putting up more documentation.
 
