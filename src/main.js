@@ -71,9 +71,9 @@ if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {
 		var worker = cluster.workers[k];
 		worker.on("message", processWorkerMsg);
 	}
+}else{
+	app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
 }
-
-app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
 
 function processWorkerMsg(msg){
 	if(msg.isLog){
@@ -122,6 +122,7 @@ function interfacesLoaded(){
 }
 
 function routesLoaded(){
+
 	if(serverCtx.appCtx.routes.length == 0){
 		console.log("No routes configured! Exiting.");
 		process.exit();
