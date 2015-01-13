@@ -96,7 +96,22 @@ function app_pkg_initDone(err){
 }
 
 function dbInit(){
-	dbconfig.init(serverCtx, loadAuthMods);
+	dbconfig.init(serverCtx, appInit);
+}
+
+function appInit(){
+	var initJs = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.init);	
+	if(utils.fileExists(initJs)){
+		var init = require(initJs);
+		if(utils.isFunction(init)){
+			init(serverCtx.appCtx.config, loadAuthMods);
+		}else{
+			sh.error("The init script " + initJs + " must have a function assigned to module.exports");
+			process.exit(0);
+		}		
+	}else{
+		loadAuthMods();
+	}
 }
 
 function loadAuthMods(){

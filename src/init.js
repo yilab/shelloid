@@ -121,7 +121,8 @@ exports.serverCtx = function(pathParam, envName){
 					pub: "src/public",
 					views: "src/views",
 					data: "data",
-					uploads: "uploads"
+					uploads: "uploads",
+					init: "src/init.js"
 				},			
 				enableCluster: false,
 				domain: "localhost",
