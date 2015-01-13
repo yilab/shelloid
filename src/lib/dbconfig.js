@@ -68,3 +68,5 @@ var databaseSupport = {
 	}
 	
 };
+
+shelloid.db = lib_require("db");
