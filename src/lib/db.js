@@ -1,10 +1,12 @@
+var utils = lib_require("utils");
+
 function EasyDb(config) {
     this.queries = [];
     this.successH = [];
     this.errorH = null;
     this.alwaysH = null;
 	this.config = config;
-    this.proxy = this.config.support.createProxy();
+    this.proxy = this.config.support.modProxy.createProxy();
     this.transaction = false;
     this.doneH = null;
 	installQueryHandlers(this);
@@ -24,7 +26,7 @@ function installQueryHandlers(easyDb){
 					 if(easyDb.queries.length > 0){
 						throw new Error(sh.caller("Expecting a query generator function."));
 					}
-					param = Array.prototype.splice.call(arguments);
+					param = Array.prototype.slice.call(arguments);
 				}
 				easyDb.queries.push({param: param, name: op});
 				easyDb.lastCallWasQuery = true;
@@ -94,13 +96,13 @@ function _execute_queries(easyDb) {
     }
 
     var queryInfo = easyDb.queries.shift();
-    var queryParam = queryInfo.param; 
+	var queryParam = queryInfo.param;
 	if(utils.isFunction(queryParam)){
 		queryParam = queryParam();//generate the query
 	}
 	
 	var callback = 
-        function (err) {
+        function (err) {			
             if (err) {
                 logger.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
                 if (easyDb.errorH)
@@ -108,10 +110,10 @@ function _execute_queries(easyDb) {
                 _rollback_txn(easyDb);
             } else {
                 var successF = easyDb.successH.shift();
-                var proceed = true;
+                var proceed = true;					
                 if (successF) {
                     try {
-                        successF.apply(null, Array.prototype.splice.call(arguments, 1));
+                        successF.apply(null, Array.prototype.slice.call(arguments, 1));
                     }
                     catch (e) {
                         if (easyDb.errorH)

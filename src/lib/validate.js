@@ -44,7 +44,7 @@ exports.responseOk = function(req, res, obj, ifc, appCtx){
 	}
 	
 	if(ifc && ifc.body){
-		if(!validate.typeOk(obj, ifc.body, appCtx.config.validate.res, req, res)){
+		if(!typeOk(obj, ifc.body, appCtx.config.validate.res, req, res)){
 			return false;
 		}
 	}
@@ -115,17 +115,18 @@ var shortContentTypes = {
 	"file" : "multipart/form-data"
 };
 
-function typeError(opath, req, requiredType, paramNotFound){
+function typeError(opath, req, res, requiredType, paramNotFound){
+	var t = res ? "response" : "request";
 	if(!requiredType){
 		if(paramNotFound){
-			console.log("Invalid request to: " + req.url + 
+			console.log("Invalid " + t + " to: " + req.url + 
 						". Required parameter: " + opath + " not found");
 		}else{
-			console.log("Invalid request to: " + req.url + 
+			console.log("Invalid " + t + " to: " + req.url + 
 						". Unexpected parameter: " + opath + " found");		
 		}
 	}else{
-		console.log("Invalid request to: " + req.url + ". Bad parameter type: " + 
+		console.log("Invalid " + t + " to: " + req.url + ". Bad parameter type: " + 
 					opath + ". Required: " + requiredType);	
 	}
 }
@@ -135,7 +136,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 	if(utils.isFunction(typeDef)){
 		var r = typeDef(obj, config);
 		if(!r){
-			typeError(opath, req, typeDef.typename);	
+			typeError(opath, req, res, typeDef.typename);	
 			return false;
 		}else{
 			if(r !== true){
@@ -148,7 +149,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 	
 	if(utils.isObject(obj)){
 		if(!utils.isObject(typeDef)){
-			typeError(opath, req, typename(typeDef) );
+			typeError(opath, req, res, typename(typeDef) );
 			return false;
 		}
 		for(var k in typeDef){
@@ -156,7 +157,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 				continue;
 			}
 			if( (typeDef[k].constructor.name != "OptionalParam") && !obj[k]){
-				typeError(opath, req, false, true);
+				typeError(opath ? opath + "." + k : k, req, res, false, true);
 				return false;
 			}
 		}
@@ -172,7 +173,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 				type = type.value;
 			}
 			if(!type){
-				typeError(opath, req, false, false);	
+				typeError(opath, req, res, false, false);	
 				return false;
 			}
 			if(!typeOk(v, type, config, req, res, opath)){
@@ -183,11 +184,11 @@ function typeOk(obj, typeDef, config, req, res, opath){
 	}else
 	if(utils.isArray(obj)){
 		if(!utils.isArray(typeDef)){
-			typeError(opath, req, typename(typeDef) );
+			typeError(opath, req, res, typename(typeDef) );
 			return false;
 		}
 		if(typeDef.length == 0 && obj.length > 0){
-			typeError(opath, req, "empty array");
+			typeError(opath, req, res, "empty array");
 			return false;
 		}
 		for(var i=0;i<obj.length;i++){
@@ -197,7 +198,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 		}
 		return true;
 	}else{	
-		typeError(opath, req, typename(typeDef));	
+		typeError(opath, req, res, typename(typeDef));	
 		return false;
 	}
 }

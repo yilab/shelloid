@@ -22,7 +22,7 @@ exports.createPool = function(config){
 			callback(err, client);
 		});
 		client.on("error", function (err) {
-			sh.log.error(sh.loc("Redis error for instance: " +config.name + ": "  + err));
+			sh.error(sh.loc("Redis error for instance: " +config.name + ": "  + err));
 		});
 	};
 

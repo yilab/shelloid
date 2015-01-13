@@ -40,7 +40,8 @@ if(process.argv.length <= 2){
 	process.exit(0);
 }
 
-var serverCtx = init.serverCtx(process.argv[2]);
+var args = process.argv.slice(2);
+var serverCtx = init.serverCtx.apply(null, args);
 
 shelloid.serverCtx = serverCtx;
 

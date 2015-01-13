@@ -27,7 +27,8 @@ shelloid.getDBConfig = function(dbname){
 var utils = lib_require("utils");
 
 exports.loadAppConfig = function(appCtx){
-	var configFile = appCtx.basePath + "/" + "config.json";
+	var suffix = (!appCtx.env || appCtx.env == "") ? ".json" : "." + appCtx.env + ".json";
+	var configFile = appCtx.basePath + "/config" + suffix;
 
 	if(utils.fileExists(configFile)){
 		var configTxt = fs.readFileSync(configFile, "utf-8");
@@ -68,8 +69,10 @@ exports.loadAppConfig = function(appCtx){
 	}
 }
 
-exports.serverCtx = function(pathParam){
-
+exports.serverCtx = function(pathParam, envName){
+	
+	shelloid.envName = envName;
+	
 	var appBasePath = checkAppBasePath(pathParam);
 
 	var packageJsonPath = path.normalize(path.join(__dirname,  "/../package.json"));
@@ -94,6 +97,7 @@ exports.serverCtx = function(pathParam){
 		pools:{
 		},
 		appCtx :{
+			env: envName,
 			hasErrors: false,
 			basePath: appBasePath,
 			packageJsonPath: appPackageJsonPath,

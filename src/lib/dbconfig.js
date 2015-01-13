@@ -59,13 +59,15 @@ var databaseSupport = {
 		modName: "mysql",
 		modVersion: "*",
 		mod: null,//loaded dynamically
-		modProxy: null
+		modProxy: null,
+		ops: ["query"]
 	},
 	"redis" : {
 		modName: "redis",
 		modVersion: "0.12.1",
 		mod: null,//loaded dynamically
-		modProxy: null
+		modProxy: null,
+		ops: ["setex", "select", "del", "keys", "set", "hset", "hkeys"]
 	}
 	
 };

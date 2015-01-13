@@ -103,7 +103,12 @@ function routeWrapper(route, appCtx){
 					res.render_(p1, p2, p3); 
 				}
 			}
-			route.fn(req, res);
+			try{
+				route.fn(req, res);
+			}catch(err){
+				sh.error(sh.caller("Error executing the controller: " + req.url + ". Error: " + err.stack));
+				res.status(500).end("Internal Server Error.");	
+			}
 		};
 		
 		req.assert = function(cond){
@@ -138,6 +143,7 @@ function routeWrapper(route, appCtx){
 					req.validated();
 				}
 			}else{
+				sh.info("Bad request at: " + req.url);
 				res.status(400).end("Bad Request");
 			}
 		}
