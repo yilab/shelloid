@@ -11,20 +11,24 @@
 var path = require("path");
 var fs = require("fs");
 var assert = require("assert");
-
-String.prototype.endsWith = function(suffix) {
-    return this.indexOf(suffix, this.length - suffix.length) !== -1;
-};
-
-String.prototype.startsWith = function (str){
-    return this.indexOf(str) == 0;
-};
-
-shelloid.getDBConfig = function(dbname){
-	return shelloid.serverCtx.appCtx.config.databases[dbname];
-}
-
 var utils = lib_require("utils");
+var obj = lib_require("obj");
+
+exports.installGlobals = function(){
+	String.prototype.endsWith = function(suffix) {
+		return this.indexOf(suffix, this.length - suffix.length) !== -1;
+	};
+
+	String.prototype.startsWith = function (str){
+		return this.indexOf(str) == 0;
+	};
+	global.shelloid = {};
+	global.sh = shelloid;
+	shelloid.getDBConfig = function(dbname){
+		return shelloid.serverCtx.appCtx.config.databases[dbname];
+	}	
+	obj.installGlobals();	
+}
 
 exports.loadAppConfig = function(appCtx){
 	var suffix = (!appCtx.env || appCtx.env == "") ? ".json" : "." + appCtx.env + ".json";
@@ -178,6 +182,22 @@ exports.serverCtx = function(pathParam, envName){
 	return ctx;
 }
 
+exports.appInit = function(done){
+	var initJs = utils.joinIfRelative(sh.serverCtx.appCtx.basePath, sh.serverCtx.appCtx.config.dirs.init);	
+	sh.routeCtx = {config: sh.serverCtx.appCtx.config};
+	if(utils.fileExists(initJs)){
+		var init = require(initJs);
+		if(utils.isFunction(init)){
+			init(sh.routeCtx, done);
+		}else{
+			sh.error("The init script " + initJs + " must have a function assigned to module.exports");
+			process.exit(0);
+		}		
+	}else{
+		done();
+	}
+}
+
 
 function checkAppBasePath(pathParam){
 	var basePath = path.resolve(pathParam);
@@ -188,3 +208,4 @@ function checkAppBasePath(pathParam){
 	}
 	return basePath;
 }
+

@@ -11,8 +11,6 @@
  */
 global.lib_require = require("./lib/lib_require.js");
 global.sys_require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
-global.shelloid = {};
-global.sh = shelloid;
 
 var http = require('http'),
 	path = require("path"),
@@ -21,8 +19,9 @@ var http = require('http'),
 	winston = require('winston');
 
 /*require/init order is important*/
-var obj =  lib_require("obj");
 var	init = require("./init.js");
+
+init.installGlobals();
 
 var log = lib_require("log");
 
@@ -100,19 +99,7 @@ function dbInit(){
 }
 
 function appInit(){
-	var initJs = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.init);	
-	sh.routeCtx = {config: serverCtx.appCtx.config};
-	if(utils.fileExists(initJs)){
-		var init = require(initJs);
-		if(utils.isFunction(init)){
-			init(sh.routeCtx, loadAuthMods);
-		}else{
-			sh.error("The init script " + initJs + " must have a function assigned to module.exports");
-			process.exit(0);
-		}		
-	}else{
-		loadAuthMods();
-	}
+	init.appInit(loadAuthMods);
 }
 
 function loadAuthMods(){
