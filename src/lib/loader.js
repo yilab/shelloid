@@ -83,9 +83,6 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 					barrier.countDown();
 				}
 			);
-		}else
-		{
-			filesToBeProcessed--;
 		}
 	}
 }
