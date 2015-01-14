@@ -69,6 +69,9 @@ exports.loadAppConfig = function(appCtx){
 		var dateFormatInt = {"string": 0, "date": 1, "moment": 2};
 		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
 		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
+		
+		config.dirs._sim = config.dirs.sim;
+		config.dirs.sim = utils.joinIfRelative(appCtx.basePath, config.dirs.sim);
 	}else{
 		if(appCtx.env && appCtx.env != ""){
 			console.log("Cannot find the configuration file for the environment: " + appCtx.env + ". Exiting.");
@@ -118,7 +121,8 @@ exports.serverCtx = function(pathParam, envName){
 			folders:{
 				routes: null,
 				auth: null,
-				interfaces:null
+				interfaces:null,
+				sim: null
 			},
 			config: {
 				viewEngine : "ejs",
@@ -130,7 +134,8 @@ exports.serverCtx = function(pathParam, envName){
 					views: "src/views",
 					data: "data",
 					uploads: "uploads",
-					init: "src/init.js"
+					init: "src/init.js",
+					sim: "src/sim"
 				},			
 				enableCluster: false,
 				domain: "localhost",

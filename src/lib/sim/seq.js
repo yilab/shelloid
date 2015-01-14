@@ -7,27 +7,68 @@
  the terms of this license.
  You must not remove this notice, or any other, from this software.
  */
-
- var ctrlBase = lib_require("sim/ctrl-base");
+var assert = require("assert");
+var ctrlBase = lib_require("sim/ctrl-base");
+var utils = lib_require("utils");
  
  module.exports = function(){
 	return new Seq();
  }
  
  function Seq(){
+ 	ctrlBase.CtrlBase.call(this); 
 	this.prev = {};
  }
  
  Seq.prototype = Object.create(ctrlBase.CtrlBase.prototype);
  
- Seq.prototype.execute = function(){
-	if(this.fnReq.length > 0){
-		execute(this);
+ Seq.prototype.executeImpl = function(){
+	var seq = this;
+	if(seq.stepBuf.length == 0){
+		for(var i=0;i<seq.doneHandlers.length;i++){
+			seq.doneHandlers[i].call(null);
+		}
+		return;
+	}
+	
+	var s = this.stepBuf.shift();
+	assert(s);
+	if(utils.isFunction(s.stepFn)){
+		var req = {};
+		var res = {};
+		req.res = res;
+		res.req = req;
+		req.prev = this.prev.req;
+		req.route = function(){
+			sh.sim.route(req, res);
+		}
+		res.json = res.send = function(obj){
+			console.log("Got response for: " + req.url);
+			if(s.successFn){
+				s.successFn();
+			}
+			process.nextTick(function(){
+				seq.executeImpl();
+			});
+		}
+		res.render = function(p1, p2, p3){
+			if(s.successFn){
+				s.successFn();
+			}
+			process.nextTick(function(){
+				seq.executeImpl();
+			});	
+		}
+		this.prev.req = req;	
+		s.stepFn(req, res);
 	}else{
-		sh.info(sh.caller("Execute() on empty sequence")));
+		var ctrl = s.stepFn;
+		ctrl.done(function(){
+			process.nextTick(function(){
+				seq.executeImpl();
+			});
+		});
+		ctrl.execute();
 	}
  }
  
- function execute(seq){
-	
- }

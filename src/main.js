@@ -54,6 +54,10 @@ if(cluster.isMaster){
 }
 
 if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {
+	if(serverCtx.appCtx.env == "sim"){
+		sh.error("Cannot enable cluster in simulator mode. Please set config.enableCluster to false");
+		process.exit(0);
+	}
 	console.log("Enabling Cluster: Starting workers");
 	cluster.setupMaster({ silent: false });
 	// Fork workers.
@@ -119,7 +123,13 @@ function authModsAdded(){
 }
 
 function interfacesLoaded(){
-	loader.loadRoutes(serverCtx, routesLoaded);
+	if(serverCtx.appCtx.env == "sim"){
+		var sim = lib_require("sim");
+		sim.init();
+		loader.loadRoutes(serverCtx, sim.enterSimMode);
+	}else{
+		loader.loadRoutes(serverCtx, routesLoaded);
+	}
 }
 
 function routesLoaded(){

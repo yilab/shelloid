@@ -70,7 +70,7 @@ EasyDb.prototype.done = function (d) {
 EasyDb.prototype.clear = function () {
     if (this.alwaysH)
         this.alwaysH();
-    this.config.pool.release(this.client);
+    this.config.pool.release(this.proxy.getClient());
     this.transaction = false;
     this.proxy.setClient(null);
 };

@@ -1,7 +1,7 @@
 {
   "name": "shelloid",
   "author" : "jayaraj-poroor",
-  "version": "0.1.0-a18",
+  "version": "0.1.0-a19",
   "description": "Simple and secure Node.js web application server.",
   "main": "src/main.js",
   "scripts": {
