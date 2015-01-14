@@ -28,6 +28,7 @@ exports.installGlobals = function(){
 		return shelloid.serverCtx.appCtx.config.databases[dbname];
 	}	
 	obj.installGlobals();	
+	sh.require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
 }
 
 exports.loadAppConfig = function(appCtx){
@@ -69,7 +70,12 @@ exports.loadAppConfig = function(appCtx){
 		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
 		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
 	}else{
-		console.log("Application config file does not exist. Using defaults");
+		if(appCtx.env && appCtx.env != ""){
+			console.log("Cannot find the configuration file for the environment: " + appCtx.env + ". Exiting.");
+			process.exit(0);
+		}else{
+			console.log("Application config file does not exist. Using defaults");
+		}
 	}
 }
 
