@@ -10,7 +10,6 @@
  You must not remove this notice, or any other, from this software.
  */
 global.lib_require = require("./lib/lib_require.js");
-global.sys_require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
 
 var http = require('http'),
 	path = require("path"),
@@ -45,8 +44,6 @@ var serverCtx = init.serverCtx.apply(null, args);
 shelloid.serverCtx = serverCtx;
 
 init.loadAppConfig(serverCtx.appCtx);
-
-sys_require(serverCtx);//initialize sys_require.
 
 var numCPUs = os.cpus().length;
 

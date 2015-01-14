@@ -8,15 +8,8 @@
  You must not remove this notice, or any other, from this software.
  */
 
-var serverCtx;
-var utils = lib_require("utils");
- 
 module.exports = function(param){
-	if(utils.isObject(param)){
-		serverCtx = param;
-		return;
-	}
-	var p = serverCtx.basePath + "/node_modules/" + param;
+	var p = sh.serverCtx.basePath + "/node_modules/" + param;
 	var m = require(p);
 	return m;
 }
