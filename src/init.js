@@ -79,9 +79,7 @@ exports.loadAppConfig = function(appCtx){
 	}
 }
 
-exports.serverCtx = function(pathParam, envName){
-	
-	shelloid.envName = envName;
+exports.serverCtx = function(pathParam, envName){	
 	
 	var appBasePath = checkAppBasePath(pathParam);
 
@@ -190,7 +188,7 @@ exports.serverCtx = function(pathParam, envName){
 
 exports.appInit = function(done){
 	var initJs = utils.joinIfRelative(sh.serverCtx.appCtx.basePath, sh.serverCtx.appCtx.config.dirs.init);	
-	sh.routeCtx = {config: sh.serverCtx.appCtx.config};
+	sh.routeCtx = {config: sh.serverCtx.appCtx.config, env: sh.serverCtx.appCtx.env};
 	if(utils.fileExists(initJs)){
 		var init = require(initJs);
 		if(utils.isFunction(init)){
