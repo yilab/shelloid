@@ -22,7 +22,8 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	var charCodeZ = "z".charCodeAt(0);
 	var charCode0 = "0".charCodeAt(0);
 	var charCode9 = "9".charCodeAt(0);
-	var annotations = {};
+	var annotations = {
+	};
 	var annCurrent = {};
 	
 	var idChar = function(c){
@@ -52,11 +53,11 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 					if(idChar(line[k])){
 						id += line[k];
 					}else{
-						annotations[id] = annCurrent;
-						annCurrent = {};
 						break;
 					}
 				}
+				annotations[id] = annCurrent;
+				annCurrent = {};				
 			}else{
 				annCurrent = {};
 			}

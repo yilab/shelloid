@@ -51,12 +51,18 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 			console.log("Processing: " + files[i].path + " (" + modType + ")" );
 			annotation.parseAnnotations(serverCtx, files[i],  
 				function(pathInfo, annotations){
+					if(!annotations){
+						annotations = {};
+					}
 					var url = pathToURL(pathInfo.path, modPathLength);			
 					var m = require(pathInfo.path);
 					for(f in m){
 						if(m.hasOwnProperty(f)){
 							if(f != "index"){
 								url = url + "/" + f;
+							}
+							if(!annotations[f]){
+								annotations[f] = {};
 							}
 							if(!annotations[f].ignore){
 								var mod = 
@@ -83,6 +89,8 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 					barrier.countDown();
 				}
 			);
+		}else{
+			barrier.countDown();
 		}
 	}
 }

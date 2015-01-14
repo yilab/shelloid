@@ -92,8 +92,17 @@ exports.isArray = function(obj){
 	return obj.constructor == Array;
 }
 
-exports.isObject = function(obj){
+function isObject(obj){
 	return toString.call(obj) == "[object Object]";
+}
+
+exports.isObject = isObject;
+
+exports.getProp = function(obj, p){
+	if(!isObject(obj))
+		return null;
+	else
+		return obj[p];
 }
 
 exports.isFunction = function(obj){
