@@ -115,7 +115,7 @@ exports.countingBarrier = function(count, done){
 	
 	return {
 		countDown: function(){
-				sync.emit("count-down");	
+			sync.emit("count-down");	
 		}
 	}
 }

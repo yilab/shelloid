@@ -101,10 +101,11 @@ function dbInit(){
 
 function appInit(){
 	var initJs = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.init);	
+	sh.routeCtx = {config: serverCtx.appCtx.config};
 	if(utils.fileExists(initJs)){
 		var init = require(initJs);
 		if(utils.isFunction(init)){
-			init(serverCtx.appCtx.config, loadAuthMods);
+			init(sh.routeCtx, loadAuthMods);
 		}else{
 			sh.error("The init script " + initJs + " must have a function assigned to module.exports");
 			process.exit(0);
@@ -152,7 +153,6 @@ function routesLoaded(){
 	}
 
 	var server = http.createServer(serverCtx.appCtx.app);
-
 	server.listen(serverCtx.appCtx.config.port, function(){
 	  shelloid.info('Shelloid server version: ' + serverCtx.packageJson.version + ' listening on ' + 
 		serverCtx.appCtx.config.port);

@@ -92,15 +92,33 @@ function routeWrapper(route, appCtx){
 		req.validated = function(){
 			res.json_ = res.json;
 			res.render_ = res.render;
-			res.json = function(obj){
-				if(checkResponseObject(req, res, obj, ifcRes, appCtx)){
-					res.json_(obj);
+			res.validated = function(){
+				if(res.sh.pendingOp == "json"){
+					res.json_.apply(res, res.sh.opParams);
+				}else
+				if(res.sh.pendingOp == "render"){
+					res.render_.apply(res, res.sh.opParams);
+				}else{
+					throw new Error("Unknown operation in res.validate()");
 				}
+			}
+			res.assert = function(cond){
+				if(!cond){
+					var msg = sh.caller("Assertion failed in function");
+					throw(new ValidateError(msg));
+				}
+			};			
+			res.json = function(obj){
+				res.sh = {pendingOp: "json", opParams: [obj]};
+				checkResponseObject(req, res, obj, ifcRes, appCtx);
 			};			
 
 			res.render = function(p1, p2, p3){
-				if(!utils.isObject(p2) || checkResponseObject(req, res, p2, ifcRes, appCtx)){
-					res.render_(p1, p2, p3); 
+				res.sh = {pendingOp: "render", opParams: [p1, p2, p3]};			
+				if(!utils.isObject(p2)){
+					res.render_(p1, p2, p3);
+				}else{
+					checkResponseObject(req, res, p2, ifcRes, appCtx);
 				}
 			}
 			
@@ -108,11 +126,15 @@ function routeWrapper(route, appCtx){
 			d0.add(req);
 			d0.add(res);
 			d0.on('error', function(err) {
-				sh.error(sh.caller("Error executing the controller: " + req.url + ". Error: " + err.stack));
-				res.status(500).end("Internal Server Error.");	
+				if(err.constructor.name == "ValidateError"){
+					sh.error("Response validate error: " + er.msg + " for " + req.url);
+				}else{			
+					sh.error(sh.caller("Error executing the response stack for: " + req.url + ". Error: " + err.stack));
+					res.status(500).end("Internal Server Error.");	
+				}
 			});
 			d0.run(function(){
-				route.fn(req, res);
+				route.fn(req, res, sh.routeCtx);
 			});
 		};
 		
@@ -142,7 +164,7 @@ function routeWrapper(route, appCtx){
 						res.status(400).end("Bad Request");
 					});
 					d.run(function(){
-						ifcReq.validate(req);
+						ifcReq.validate(req, sh.routeCtx);
 					});
 				}else{
 					req.validated();
@@ -166,7 +188,10 @@ function checkResponseObject(req, res, obj, ifcRes, appCtx){
 	}
 	if(!validate.responseOk(req, res, obj, ifcRes, appCtx)){
 		res.status(500).end("Server Error: Bad Response!");	
-		return false;
 	}
-	return true;
+	if(ifcRes.validate){
+		ifcRes.validate(req, res, sh.routeCtx);
+	}else{
+		res.validated();
+	}
 }
