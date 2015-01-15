@@ -10,8 +10,10 @@
 
 var utils = lib_require("utils");
 
-function CtrlBase(){
+function CtrlBase(name){
+	this.name = name;
 	this.stepBuf = [];
+	this.stepsExecuted = [];
 	this.doneHandlers = [];
 }
  
@@ -65,7 +67,15 @@ function CtrlBase(){
  
  CtrlBase.prototype.execute = function(){
 	var ctrl = this;
+	if(this.executing){
+		throw new Error("Attempt to execute an already executing control block.Name: " + this.name);
+	}
+
+	this.stepBuf = this.stepBuf.concat(this.stepsExecuted);
+	this.cancel = false;
+	this.repeat = false;
 	if(this.stepBuf.length > 0){
+		this.executing = true;	
 		process.nextTick(function(){
 			ctrl.executeImpl();
 		});
@@ -78,4 +88,12 @@ function CtrlBase(){
  	sh.info(sh.caller("Empty ExecuteImpl() of CtrlBase called."));
  }
  
+ CtrlBase.prototype.cancel = function(){
+	this.cancel = true;
+ }
+ 
+ CtrlBase.prototype.repeat = function(){
+	this.repeat = true;
+ }
+  
  exports.CtrlBase = CtrlBase;

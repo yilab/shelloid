@@ -11,12 +11,12 @@ var assert = require("assert");
 var ctrlBase = lib_require("sim/ctrl-base");
 var utils = lib_require("utils");
  
- module.exports = function(){
-	return new Seq();
+ module.exports = function(name){
+	return new Seq(name);
  }
  
- function Seq(){
- 	ctrlBase.CtrlBase.call(this); 
+ function Seq(name){
+ 	ctrlBase.CtrlBase.call(this, name); 
 	this.prev = {};
  }
  
@@ -24,14 +24,35 @@ var utils = lib_require("utils");
  
  Seq.prototype.executeImpl = function(){
 	var seq = this;
-	if(seq.stepBuf.length == 0){
+	
+	if(seq.cancel){
+		seq.cancel = false;
 		for(var i=0;i<seq.doneHandlers.length;i++){
 			seq.doneHandlers[i].call(null);
+		}
+		seq.executing = false;
+		return;
+	}
+	
+	if(seq.stepBuf.length == 0){
+		if(seq.repeat){
+			seq.repeat = false;
+			seq.stepBuf = seq.stepsExecuted;
+			seq.stepsExecuted = [];
+			process.nextTick(function(){
+				seq.executeImpl();
+			});
+		}else{
+			for(var i=0;i<seq.doneHandlers.length;i++){
+				seq.doneHandlers[i].call(null);
+			}
+			seq.executing = false;
 		}
 		return;
 	}
 	
 	var s = this.stepBuf.shift();
+	this.stepsExecuted.push(s);
 	assert(s);
 	if(utils.isFunction(s.stepFn)){
 		var req = {};
@@ -42,10 +63,24 @@ var utils = lib_require("utils");
 		req.route = function(){
 			sh.sim.route(req, res);
 		}
+		req.skip = function(){
+			req.route = res.render = res.send = res.json = nop;
+			process.nextTick(function(){
+				seq.executeImpl();
+			});
+		}
+		req.repeat = function(){
+			s.repeat = true;
+		}
+		
 		res.json = res.send = function(obj){
 			console.log("Got response for: " + req.url);
 			if(s.successFn){
 				s.successFn();
+			}
+			if(s.repeat){
+				s.repeat = false;
+				seq.stepBuf.unshift(s);
 			}
 			process.nextTick(function(){
 				seq.executeImpl();
@@ -55,6 +90,10 @@ var utils = lib_require("utils");
 			if(s.successFn){
 				s.successFn();
 			}
+			if(s.repeat){
+				s.repeat = false;
+				seq.stepBuf.unshift(s);
+			}			
 			process.nextTick(function(){
 				seq.executeImpl();
 			});	
@@ -72,3 +111,5 @@ var utils = lib_require("utils");
 	}
  }
  
+ function nop(){
+ }
