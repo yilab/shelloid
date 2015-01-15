@@ -24,20 +24,11 @@ var utils = lib_require("utils");
  
  Seq.prototype.executeImpl = function(){
 	var seq = this;
-	
-	if(seq.cancel){
-		seq.cancel = false;
-		for(var i=0;i<seq.doneHandlers.length;i++){
-			seq.doneHandlers[i].call(null);
-		}
-		seq.executing = false;
-		return;
-	}
-	
-	if(seq.stepBuf.length == 0){
-		if(seq.repeat){
-			seq.repeat = false;
-			seq.stepBuf = seq.stepsExecuted;
+		
+	if(seq.stepsRemaining.length == 0){
+		if(seq.doRepeat){
+			seq.doRepeat = false;
+			seq.stepsRemaining = seq.stepBuf.slice();
 			seq.stepsExecuted = [];
 			process.nextTick(function(){
 				seq.executeImpl();
@@ -46,15 +37,20 @@ var utils = lib_require("utils");
 			for(var i=0;i<seq.doneHandlers.length;i++){
 				seq.doneHandlers[i].call(null);
 			}
-			seq.executing = false;
+			seq.isExecuting = false;
 		}
 		return;
 	}
 	
-	var s = this.stepBuf.shift();
+	var s = this.stepsRemaining.shift();
 	this.stepsExecuted.push(s);
 	assert(s);
-	if(utils.isFunction(s.stepFn)){
+	this.executeStep(s);
+ }
+ 
+ Seq.prototype.executeStep = function(s){
+	var seq = this;
+ 	if(utils.isFunction(s.stepFn)){
 		var req = {};
 		var res = {};
 		req.res = res;
@@ -64,23 +60,26 @@ var utils = lib_require("utils");
 			sh.sim.route(req, res);
 		}
 		req.skip = function(){
+			if(req.hasSkipped){
+				return;//already skipped
+			}
 			req.route = res.render = res.send = res.json = nop;
+			req.hasSkipped = true;
 			process.nextTick(function(){
 				seq.executeImpl();
 			});
 		}
 		req.repeat = function(){
-			s.repeat = true;
+			req.doRepeat = true;
 		}
 		
 		res.json = res.send = function(obj){
 			console.log("Got response for: " + req.url);
 			if(s.successFn){
-				s.successFn();
+				s.successFn(req, res);
 			}
-			if(s.repeat){
-				s.repeat = false;
-				seq.stepBuf.unshift(s);
+			if(req.doRepeat){
+				seq.stepsRemaining.unshift(s);
 			}
 			process.nextTick(function(){
 				seq.executeImpl();
@@ -88,11 +87,10 @@ var utils = lib_require("utils");
 		}
 		res.render = function(p1, p2, p3){
 			if(s.successFn){
-				s.successFn();
+				s.successFn(req, res);
 			}
-			if(s.repeat){
-				s.repeat = false;
-				seq.stepBuf.unshift(s);
+			if(req.doRepeat){
+				seq.stepsRemaining.unshift(s);
 			}			
 			process.nextTick(function(){
 				seq.executeImpl();
@@ -109,7 +107,15 @@ var utils = lib_require("utils");
 		});
 		ctrl.execute();
 	}
- }
- 
- function nop(){
- }
+}
+
+Seq.prototype.cancel = function(){
+	var seq = this;
+	this.stepsRemaining = [];
+	process.nextTick(function(){
+		seq.executeImpl();
+	});
+} 
+
+function nop(){
+}

@@ -14,6 +14,7 @@ function CtrlBase(name){
 	this.name = name;
 	this.stepBuf = [];
 	this.stepsExecuted = [];
+	this.stepsRemaining = [];
 	this.doneHandlers = [];
 }
  
@@ -67,15 +68,14 @@ function CtrlBase(name){
  
  CtrlBase.prototype.execute = function(){
 	var ctrl = this;
-	if(this.executing){
+	if(this.isExecuting){
 		throw new Error("Attempt to execute an already executing control block.Name: " + this.name);
 	}
 
-	this.stepBuf = this.stepBuf.concat(this.stepsExecuted);
-	this.cancel = false;
-	this.repeat = false;
-	if(this.stepBuf.length > 0){
-		this.executing = true;	
+	this.stepsRemaining = this.stepBuf.slice();
+	this.doRepeat = false;
+	if(this.stepsRemaining.length > 0){
+		this.isExecuting = true;	
 		process.nextTick(function(){
 			ctrl.executeImpl();
 		});
@@ -89,11 +89,11 @@ function CtrlBase(name){
  }
  
  CtrlBase.prototype.cancel = function(){
-	this.cancel = true;
+	throw new Error(sh.caller("Cancel() not implemented"));
  }
  
  CtrlBase.prototype.repeat = function(){
-	this.repeat = true;
+	this.doRepeat = true;
  }
   
  exports.CtrlBase = CtrlBase;

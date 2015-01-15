@@ -23,10 +23,10 @@ Concur.prototype = Object.create(ctrlBase.CtrlBase.prototype);
  
  Concur.prototype.executeImpl = function(){
 	var concur = this;
-	var barrier = utils.countingBarrier(this.stepBuf.length,
+	var barrier = utils.countingBarrier(this.stepsRemaining.length,
 		function(){
-			if(concur.repeat){
-				concur.repeat = false;
+			if(concur.doRepeat){
+				concur.doRepeat = false;
 				process.nextTick(function(){
 					concur.executeImpl();
 				});
@@ -34,16 +34,16 @@ Concur.prototype = Object.create(ctrlBase.CtrlBase.prototype);
 			for(var i=0;i<concur.doneHandlers.length;i++){
 				concur.doneHandlers[i].call(null);
 			}
-			concur.executing = false;
+			concur.isExecuting = false;
 		}
 	);
 
-	for(var i=0;i<this.stepBuf.length;i++){
-		executeStep(stepBuf[i]);
+	for(var i=0;i<this.stepsRemaining.length;i++){
+		this.executeStep(this.stepsRemaining[i], barrier);
 	}	
  }
  
-function executeStep(s){
+Concur.prototype.executeStep = function(s, barrier){
 	var concur = this;
 	assert(s);
 	if(utils.isFunction(s.stepFn)){
@@ -53,22 +53,22 @@ function executeStep(s){
 		res.req = req;
 		req.skip = function(){
 			req.route = res.render = res.send = res.json = nop;
+			req.doSkip = true;
 			barrier.countDown();
 		}
 		req.repeat = function(){
-			s.repeat = true;
+			req.doRepeat = true;
 		}
 		req.route = function(){
 			sh.sim.route(req, res);
 		}
 		res.json = res.send = function(obj){
 			if(s.successFn){
-				s.successFn();
+				s.successFn(req, res);
 			}
-			if(s.repeat){
-				s.repeat = false;
+			if(req.doRepeat){
 				process.nextTick(function(){
-					concur.executeStep(s);
+					concur.executeStep(s, barrier);
 				});
 			}
 			barrier.countDown();
@@ -76,12 +76,11 @@ function executeStep(s){
 		}
 		res.render = function(p1, p2, p3){
 			if(s.successFn){
-				s.successFn();
+				s.successFn(req, res);
 			}				
-			if(s.repeat){
-				s.repeat = false;
+			if(req.doRepeat){
 				process.nextTick(function(){
-					concur.executeStep(s);
+					concur.executeStep(s, barrier);
 				});
 			}			
 			barrier.countDown();
