@@ -51,7 +51,6 @@ exports.newInstance = function(appCtx){
 			},
 			onFileUploadComplete: function (file) {
 			  console.log(file.fieldname + ' uploaded to  ' + file.path)
-			  done=true;
 			}
 		})
 	);

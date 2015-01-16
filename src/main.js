@@ -11,8 +11,7 @@
  */
 global.lib_require = require("./lib/lib_require.js");
 
-var http = require('http'),
-	path = require("path"),
+var path = require("path"),
 	cluster = require("cluster"),
 	os = require("os");
 	winston = require('winston');
@@ -145,11 +144,59 @@ function routesLoaded(){
 		console.log("Application context has errors. Exiting.");
 		process.exit(0);
 	}
-
-	var server = http.createServer(serverCtx.appCtx.app);
+	var engine;
+	var options = null;
+	if(serverCtx.appCtx.config.https.enable){
+		engine = require('https');
+		options = httpsOptions(serverCtx.appCtx.config.https);		
+	}else{
+		engine = require("http");
+	}
+	var server = engine.createServer(serverCtx.appCtx.app, options);
 	server.listen(serverCtx.appCtx.config.port, function(){
 	  shelloid.info('Shelloid server version: ' + serverCtx.packageJson.version + ' listening on ' + 
 		serverCtx.appCtx.config.port);
 	});
 		
+}
+
+function httpsOptions(c){
+	var options = {passphrase: c.passphrase};
+	if(c.key && c.pfx){
+		sh.error("Https config: Please specify either key/cert files or a pfx file - not both.");
+		process.exit(0);
+	}
+	
+	if(c.key){
+		if(!utils.fileExists(c.key)){
+			sh.error("Https config: Key file does not exist: " + c.key);
+			process.exit(0);				
+		}
+		if(!utils.fileExists(c.cert)){
+			sh.error("Https config: Cert file does not exist: " + c.pfx);
+			process.exit(0);			
+		}
+		options.key = fs.readFileSync(c.key);
+		options.cert = fs.readFileSync(c.cert);
+	}
+	
+	if(c.pfx){
+		if(!utils.fileExists(c.pfx)){
+			sh.error("Https config: PFX file does not exist: " + c.pfx);
+			process.exit(0);			
+		}
+		options.pfx = fs.readFileSync(c.pfx);
+	}
+	
+	if(c.ca){
+		options.ca = [];
+		for(var i=0;i<c.ca.length;i++){
+			if(!utils.fileExists(c.ca[i])){
+				sh.error("Https config: CA file does not exist: " + c.ca[i]);
+				process.exit(0);
+			}
+			options.ca.push(fs.readFileSync(c.ca[i]));
+		}
+	}
+	return options;
 }

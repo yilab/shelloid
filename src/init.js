@@ -72,6 +72,19 @@ exports.loadAppConfig = function(appCtx){
 		
 		config.dirs._sim = config.dirs.sim;
 		config.dirs.sim = utils.joinIfRelative(appCtx.basePath, config.dirs.sim);
+		config.https._key = config.https.key;
+		config.https._cert = config.https.cert;
+		config.https._pfx = config.https.pfx;
+		config.https._ca = config.https.ca;
+		config.https.key = utils.joinIfRelative(appCtx.basePath, config.https.key);
+		config.https.cert = utils.joinIfRelative(appCtx.basePath, config.https.cert);
+		config.https.pfx = utils.joinIfRelative(appCtx.basePath, config.https.pfx);
+		if(!utils.isArray(config.https.ca)){
+			config.https.ca = [config.https.ca];
+		}
+		for(var i=0;i<config.https.ca.length;i++){
+			config.https.ca[i] = utils.joinIfRelative(appCtx.basePath, config.https.ca[i]);
+		}
 	}else{
 		if(appCtx.env && appCtx.env != ""){
 			console.log("Cannot find the configuration file for the environment: " + appCtx.env + ". Exiting.");
@@ -145,6 +158,10 @@ exports.serverCtx = function(pathParam, envName){
 				log:{
 					file : "shelloid.log", //relative to data dir
 					level: "verbose"
+				},
+				https:{
+					enable: false,
+					//https options. Give file names for key/cert/pfx/ca.
 				},
 				validate:{
 					req:{

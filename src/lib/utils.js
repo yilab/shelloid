@@ -50,6 +50,7 @@ exports.isAbsolutePath = function(p){
 }
 
 exports.joinIfRelative = function(basePath, targetPath){
+	if(!targetPath) return null;
 	var absPath = targetPath;
 	if(!module.exports.isAbsolutePath(targetPath)){
 		absPath = path.normalize(path.join(basePath, targetPath));
@@ -86,14 +87,14 @@ exports.mkdirIfNotExists = function(dir, logMsg){
 var toString = Object.prototype.toString;
 
 exports.isString = function(obj){
-  return toString.call(obj) == '[object String]';
+  return obj && toString.call(obj) == '[object String]';
 }
 exports.isArray = function(obj){
-	return obj.constructor == Array;
+	return obj && obj.constructor == Array;
 }
 
 function isObject(obj){
-	return toString.call(obj) == "[object Object]";
+	return obj && toString.call(obj) == "[object Object]";
 }
 
 exports.isObject = isObject;
