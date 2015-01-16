@@ -164,6 +164,8 @@ function configureProviderAuth(appCtx, authMod, provider){
 			return;			
 	}
 	
+	strategyConfig.stateless = true;//to remove the need for session affinity when scaling out.
+	
 	passport.use(new AuthStrategy(strategyConfig,
 		function(identifier, profile, done) {
 			var authMsg = {identifier: identifier, profile: profile, type: provider};
