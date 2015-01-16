@@ -86,6 +86,19 @@ exports.loadAppConfig = function(appCtx){
 			config.https.ca[i] = utils.joinIfRelative(appCtx.basePath, config.https.ca[i]);
 		}
 		discoverNode(config);
+		if(!utils.isArray(config.allowDomains)){
+			sh.error("Configuration error: config.allowDomains must be an array (can be empty or left unspecified.)");
+			process.exit(0);
+		}else{
+			for(var i=0;i<config.allowDomains.length;i++){
+				var allow = config.allowDomains[i];
+				if(utils.isRegExp(allow.domain)){
+					allow.isRegExp = true;
+				}else{
+					allow.domain = allow.domain.toLowerCase();
+				}
+			}
+		}
 	}else{
 		if(appCtx.env && appCtx.env != ""){
 			console.log("Cannot find the configuration file for the environment: " + appCtx.env + ". Exiting.");
@@ -121,7 +134,7 @@ exports.serverCtx = function(pathParam, envName){
 		basePath: path.normalize(path.join(__dirname, "/..")),
 		pools:{
 		},
-		appCtx :{
+		appCtx :{			
 			env: envName,
 			hasErrors: false,
 			basePath: appBasePath,
@@ -130,6 +143,7 @@ exports.serverCtx = function(pathParam, envName){
 			packageJsonModified: false,
 			routes: [],
 			authMods : [],
+			customAuths: {},
 			interfaces: {},
 			app: null,
 			folders:{
@@ -170,6 +184,7 @@ exports.serverCtx = function(pathParam, envName){
 				node:{
 					is:{} //e.g. is.nodename is true if the current host is the named node.
 				},
+				allowDomains:[],//structure: {enable: true, cookies: true, domain: string, "*" or regex}
 				validate:{
 					req:{
 						dateFormat: "moment",//moment, date, string

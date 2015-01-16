@@ -82,17 +82,25 @@ function routeWrapper(route, appCtx){
 		}
 	}
 	
-	var modIfcReq = appCtx.interfaces[route.relPath + "/req"];
-	var modIfcRes = appCtx.interfaces[route.relPath + "/res"];
+	var modIfcReq, modIfcRes;
+	var interfaceName = route.annotations["interface"];
+	if(interfaceName){
+		modIfcReq = appCtx.interfaces[interfaceName + "/req"];
+		modIfcRes = appCtx.interfaces[interfaceName + "/res"];
+	}
 	
 	var ifcReq = modIfcReq ? modIfcReq.fn : false;
 	var ifcRes = modIfcRes ? modIfcRes.fn : false;
 	
 	return function(req, res){
+		req.route = route;
+		if(!preprocessRequest(req, res, route)){
+			return;
+		}
 		req.validated = function(){
 			res.json_ = res.json;
 			res.render_ = res.render;
-			res.validated = function(){
+			res.validated = function(){			
 				if(res.sh.pendingOp == "json"){
 					res.json_.apply(res, res.sh.opParams);
 				}else
@@ -144,36 +152,45 @@ function routeWrapper(route, appCtx){
 				throw(new ValidateError(msg));
 			}
 		};
-		
-		if(doAuth && !req.user){
-			res.status(401).send('Unauthorized');
-			console.log("Unauthenticated access to: " + route.relPath + " (" + route.fnName + ")");
-			return;
-		}else{
-			if(isAuthRoute || validate.requestOk(req, ifcReq, appCtx)){
-				if(ifcReq.validate){
-					var d = require('domain').create();
-					d.add(req);
-					d.add(res);
-					d.on('error', function(er) {
-						if(er.constructor.name == "ValidateError"){
-							sh.error("Validate Error: " + er.msg);
-						}else{
-							sh.error("System Error: " + er.msg);
-						}
-						res.status(400).end("Bad Request");
-					});
-					d.run(function(){
-						ifcReq.validate(req, sh.routeCtx);
-					});
-				}else{
-					req.validated();
-				}
+				
+		var postAuth = function(authOk){
+			if(!authOk){
+				res.status(401).send('Unauthorized');
+				console.log("Unauthenticated access to: " + route.relPath + " (" + route.fnName + ")");
+				return;
 			}else{
-				sh.info("Bad request at: " + req.url);
-				res.status(400).end("Bad Request");
+				if(isAuthRoute || validate.requestOk(req, ifcReq, appCtx)){
+					if(ifcReq.validate){
+						var d = require('domain').create();
+						d.add(req);
+						d.add(res);
+						d.on('error', function(er) {
+							if(er.constructor.name == "ValidateError"){
+								sh.error("Validate Error: " + er.msg);
+							}else{
+								sh.error("System Error: " + er.msg);
+							}
+							res.status(400).end("Bad Request");
+						});
+						d.run(function(){
+							ifcReq.validate(req, sh.routeCtx);
+						});
+					}else{
+						req.validated();
+					}
+				}else{
+					sh.info(sh.loc("Bad request at: " + req.url));
+					res.status(400).end("Bad Request");
+				}
 			}
 		}
+		
+		if(doAuth){
+			checkAuth(req, res, postAuth);
+		}else{
+			postAuth(true);
+		}
+		
 	}
 }
 
@@ -184,7 +201,7 @@ function ValidateError(msg){
 function checkResponseObject(req, res, obj, ifcRes, appCtx){
 	var contentType = validate.getContentType(ifcRes);
 	if(contentType){
-		res.set("Content-Type", contentType);
+		res.setHeader("Content-Type", contentType);
 	}
 	if(!validate.responseOk(req, res, obj, ifcRes, appCtx)){
 		res.status(500).end("Server Error: Bad Response!");	
@@ -193,5 +210,69 @@ function checkResponseObject(req, res, obj, ifcRes, appCtx){
 		ifcRes.validate(req, res, sh.routeCtx);
 	}else{
 		res.validated();
+	}
+}
+
+function preprocessRequest(req, res, route){
+	var config = sh.serverCtx.appCtx.config;
+	if(req.headers.origin && (config.allowDomains.length > 0)){
+		doCors(req, res, route, config.allowDomains);
+	}
+	return true;
+}
+
+function doCors(req, res, route, allowDomains){
+	if(route.annotations.allowDomains === false){
+		sh.error("Cross origin request for " + req.url + " for which @allowDomains is false");
+		return;
+	}
+	var origin = req.headers.origin.toLowerCase();
+	for(var i=0;i<allowDomains.length;i++){
+		var allow = allowDomains[i];
+		var domain = allow.domain;
+		if(domain == "*" || (domain == origin) || (allow.isRegExp && allow.domain.test(origin))){
+			res.setHeader("Access-Control-Allow-Origin", origin);
+			if(allow.cookie){
+				res.setHeader("Access-Control-Allow-Credentials", "true");			
+			}
+			var methods = req.headers["Access-Control-Request-Method"];
+			if(methods){
+				methods = "GET, POST, OPTIONS, " + methods;
+				res.setHeader("Access-Control-Allow-Methods", methods);
+			}
+			var headers = req.headers["Access-Control-Request-Headers"];
+			if(headers){
+				res.setHeader("Access-Control-Allow-Headers", headers);
+			}			
+			res.setHeader("Access-Control-Max-Age", "1728000");
+			break;
+		}
+	}
+}
+
+function checkAuth(req, res, callback){	
+	var auth = req.route.annotations.auth;	
+	var calledBack = false;
+	var success = function(obj){
+		if(calledBack) return;
+		calledBack = true;
+		req.user = obj;
+		callback(true);
+	}
+	var err = function(msg){
+		if(calledBack) return;
+		calledBack = true;	
+		sh.error("Authentication failure for: " + req.url + ". Error: " + msg);
+		callback(false);
+	}
+	if(auth){
+		var authMod = sh.serverCtx.appCtx.customAuths[auth];
+		if(authMod){
+			authMod.fn(req, success, err);			
+		}else{
+			sh.error("Custom authentication module for: " + auth + " not found. Falling back on session auth");
+		}
+	}else{
+		callback(req.user ? true : false);
 	}
 }

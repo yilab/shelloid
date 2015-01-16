@@ -65,9 +65,9 @@ function addAuthMod(appCtx, authMod, barrier){
 	var modInfo = passportModules[authType];//might not exist!
 		
 	if(!modInfo){
-		console.log("Don't know how to process the authentication module: " + authMod.relPath 
-			+ " with @auth entry: " + authType);
-		appCtx.hasErrors = true;
+		console.log("Custom authentication module: " + authMod.relPath 	+ 
+					" with @auth entry: " +authType);
+		sh.serverCtx.appCtx.customAuths[authType] = authMod;
 		barrier.countDown();		
 	}else{
 		app_pkg.require(modInfo.name, modInfo.version, 

@@ -10,7 +10,10 @@ Key features (at the moment):
 * Use of annotations instead of writing code for many useful functions.
 
 * Built in authentication (via passport.js) - requires only a single authentication function to be written. 
-** Currently supports local authentication as well as Google, Facebook, Twitter authentications out of the box.
+
+* Currently supports local authentication as well as Google, Facebook, Twitter authentications out of the box.
+
+* Custom authentication, e.g, for API implementations that is attached to routes via annotations.
 
 * Built-in login session management.
 
@@ -21,6 +24,10 @@ Key features (at the moment):
 * Simplified DB API with built-in connection pooling.
 
 * Built-in simulator for controlled functional testing of application/controller logic (work in progress - please see sim/main.js in the shelloid-sample-app). Will support control of the flow of time as well as specification and verification of temporal properties.
+
+* Simple config specification for allowing cross-origin requests (implementation complying with CORS standard).
+
+* Auto detection of the current node of execution based on specified node names to IP/hostname mapping - useful for distributed and cloud deployments.
 
 Currently the software is in alpha stage with featured being added on a daily (even hourly) basis. First full featured beta release is expected to happen in another week or so. After that we will be putting up more documentation.
 

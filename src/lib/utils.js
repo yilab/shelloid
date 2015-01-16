@@ -110,6 +110,10 @@ exports.isFunction = function(obj){
 	return (typeof obj) == "function";
 }
 
+exports.isRegExp = function(obj){
+	return (obj instanceof RegExp);
+}
+
 exports.countingBarrier = function(count, done){
 	if(count <= 0){
 		process.nextTick(done);

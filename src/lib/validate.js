@@ -14,7 +14,11 @@ var util = require("util");
 exports.requestOk = function(req, ifc, appCtx){	
 
 	var contentType = getContentType(ifc);
-	if(contentType && (req.headers["content-type"] != contentType)){
+	var foundType = req.headers["content-type"];
+	if(contentType && (!foundType || !foundType.startsWith(contentType))){
+		sh.error("Content-type mismatch for: " + req.url + 
+				  ". Expected: " + contentType + 
+				   ". Found: " + foundType);
 		return false;
 	}
 	
