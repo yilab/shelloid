@@ -85,6 +85,7 @@ exports.loadAppConfig = function(appCtx){
 		for(var i=0;i<config.https.ca.length;i++){
 			config.https.ca[i] = utils.joinIfRelative(appCtx.basePath, config.https.ca[i]);
 		}
+		discoverNode(config);
 	}else{
 		if(appCtx.env && appCtx.env != ""){
 			console.log("Cannot find the configuration file for the environment: " + appCtx.env + ". Exiting.");
@@ -161,7 +162,13 @@ exports.serverCtx = function(pathParam, envName){
 				},
 				https:{
 					enable: false,
-					//https options. Give file names for key/cert/pfx/ca.
+					//https options. Give file names for key/cert/pfx/ca, optional passphrase.
+				},
+				nodes:{
+					//key value pairs of the form: node name : IP or host name
+				},
+				node:{
+					is:{} //e.g. is.nodename is true if the current host is the named node.
 				},
 				validate:{
 					req:{
@@ -235,3 +242,26 @@ function checkAppBasePath(pathParam){
 	return basePath;
 }
 
+function discoverNode(config){
+	var os = require("os");
+	var hostname = os.hostname().toLowerCase();
+	var ips = [];
+	var ifaces = os.networkInterfaces();
+	Object.keys(ifaces).forEach(function (ifname) {
+	  ifaces[ifname].forEach(function (iface) {
+		//iface.family not used at the moment.
+		if (iface.internal === false) {
+		  ips.push(iface.address);
+		}
+	  });
+	});	
+	
+	Object.keys(config.nodes).forEach(function(name){
+		var addr = config.nodes[name];
+		if(ips.indexOf(addr) >= 0 || addr.toLowerCase() == hostname){
+			config.node.is[name] = true;
+		}else{
+			config.node.is[name] = false;
+		}
+	});
+}
