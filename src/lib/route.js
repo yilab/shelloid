@@ -60,11 +60,18 @@ function addRoute(appCtx, route){
 	for(var i=0;i<method.length;i++){
 
 		var fn = routeWrapper(route, appCtx);
-			
-		console.log("Mounting " + route.relPath + 
-					" (" + route.fnName + ") at " + urlPath + " (" + method[i] + "). ");
-						
-		app[method[i]](urlPath, fn);
+		
+		var routeInstaller = app[method[i]];
+		
+		if(routeInstaller){	
+			routeInstaller.call(app, urlPath, fn);
+			console.log("Mounting " + route.relPath + 
+						" (" + route.fnName + ") at " + urlPath + " (" + method[i] + "). ");
+		}else{
+			sh.error("Cannot mount (unknown method): " + route.relPath + 
+						" (" + route.fnName + ") at " + urlPath + " (" + method[i] + "). ");
+			appCtx.hasErrors = true;
+		}					
 	}
 	
 	return true;

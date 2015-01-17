@@ -73,7 +73,7 @@ var utils = lib_require("utils");
 			req.doRepeat = true;
 		}
 		
-		res.json = res.send = function(obj){
+		res.end = res.json = res.send = function(obj){
 			console.log("Got response for: " + req.url);
 			if(s.successFn){
 				s.successFn(req, res);
@@ -84,6 +84,7 @@ var utils = lib_require("utils");
 			process.nextTick(function(){
 				seq.executeImpl();
 			});
+			return res;
 		}
 		res.render = function(p1, p2, p3){
 			if(s.successFn){
@@ -95,6 +96,7 @@ var utils = lib_require("utils");
 			process.nextTick(function(){
 				seq.executeImpl();
 			});	
+			return res;
 		}
 		this.prev.req = req;	
 		s.stepFn(req, res);

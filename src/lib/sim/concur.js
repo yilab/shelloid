@@ -62,7 +62,7 @@ Concur.prototype.executeStep = function(s, barrier){
 		req.route = function(){
 			sh.sim.route(req, res);
 		}
-		res.json = res.send = function(obj){
+		res.end = res.json = res.send = function(obj){
 			if(s.successFn){
 				s.successFn(req, res);
 			}
@@ -73,6 +73,7 @@ Concur.prototype.executeStep = function(s, barrier){
 			}
 			barrier.countDown();
 			console.log("Got response for: " + req.url);
+			return res;
 		}
 		res.render = function(p1, p2, p3){
 			if(s.successFn){
@@ -84,6 +85,7 @@ Concur.prototype.executeStep = function(s, barrier){
 				});
 			}			
 			barrier.countDown();
+			return res;
 		}
 		process.nextTick(function(){
 			s.stepFn(req, res);
