@@ -38,7 +38,7 @@ exports.newInstance = function(appCtx){
 		sh.info("No default view engine configured");
 	}
 	app.use(express.static(staticPath));	
-	app.use(express.favicon());
+	//app.use(express.favicon());
 	app.use(cookieParser());
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({extended:true}));
