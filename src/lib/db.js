@@ -19,6 +19,7 @@ function EasyDb(config) {
     this.proxy = this.config.support.modProxy.createProxy();
     this.transaction = false;
     this.doneH = null;
+	this.firstQuery = true;
 	installQueryHandlers(this);
 }
 
@@ -33,9 +34,10 @@ function installQueryHandlers(easyDb){
 				}
 				var param = queryParam;
 				if(!utils.isFunction(queryParam)){
-					 if(easyDb.queries.length > 0){
+					 if(!easyDb.firstQuery){
 						throw new Error(sh.caller("Expecting a query generator function."));
 					}
+					easyDb.firstQuery = false;
 					param = Array.prototype.slice.call(arguments);
 				}
 				easyDb.queries.push({param: param, name: op});
@@ -73,6 +75,7 @@ EasyDb.prototype.clear = function () {
     this.config.pool.release(this.proxy.getClient());
     this.transaction = false;
     this.proxy.setClient(null);
+	this.firstQuery = true;
 };
 
 

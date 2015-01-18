@@ -41,6 +41,7 @@ var args = process.argv.slice(2);
 var serverCtx = init.serverCtx.apply(null, args);
 
 shelloid.serverCtx = serverCtx;
+shelloid.appCtx = serverCtx.appCtx;
 
 init.loadAppConfig(serverCtx.appCtx);
 

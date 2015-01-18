@@ -82,4 +82,4 @@ var databaseSupport = {
 	
 };
 
-shelloid.db = lib_require("db");
+shelloid.db = lib_require("db").get;

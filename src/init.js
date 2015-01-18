@@ -232,7 +232,7 @@ exports.serverCtx = function(pathParam, envName){
 
 exports.appInit = function(done){
 	var initJs = utils.joinIfRelative(sh.serverCtx.appCtx.basePath, sh.serverCtx.appCtx.config.dirs.init);	
-	sh.routeCtx = {config: sh.serverCtx.appCtx.config, env: sh.serverCtx.appCtx.env};
+	sh.routeCtx = {config: sh.serverCtx.appCtx.config, env: sh.serverCtx.appCtx.env, app: sh.serverCtx.appCtx};
 	if(utils.fileExists(initJs)){
 		var init = require(initJs);
 		if(utils.isFunction(init)){
