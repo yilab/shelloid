@@ -20,7 +20,7 @@ var express = require('express'),
 	passport = require("passport");
 
 var utils = lib_require("utils");
-var skin = lib_require("skin");
+var theme = lib_require("theme");
 
 exports.newInstance = function(appCtx){
 	var sessionName = appCtx.config.session.name;
@@ -35,7 +35,7 @@ exports.newInstance = function(appCtx){
 	}else{
 		sh.info("No default view engine configured");
 	}
-	app.use(skin);
+	app.use(theme);
 	app.use(express.static(appCtx.config.dirs.pub));	
 	//app.use(express.favicon());
 	app.use(cookieParser());

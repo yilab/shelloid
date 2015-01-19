@@ -13,24 +13,24 @@ var utils = lib_require("utils");
 var fs = require("fs");
 module.exports = function(req, res, next){
 	var reqPath = url.parse(req.url).pathname;
-	var skinnedPublic = sh.appCtx.config.dirs.skinnedPublic;
-	var skinPath = path.join(skinnedPublic, reqPath);
+	var themedPublic = sh.appCtx.config.dirs.themedPublic;
+	var themePath = path.join(themedPublic, reqPath);
 	var ext = path.extname(reqPath);
-	if(utils.dirExists(skinPath)){
+	if(utils.dirExists(themePath)){
 		
-		skinPath = path.join(skinPath, "index.html");
+		themePath = path.join(themePath, "index.html");
 		ext = ".html";
 	}
-	if(utils.fileExists(skinPath) && contentType[ext]){
-		fs.stat(skinPath, function(err, stat){
+	if(utils.fileExists(themePath) && contentType[ext]){
+		fs.stat(themePath, function(err, stat){
 			if(err){
-				console.log("Could not stat skin file: " + skinPath + ". Falling back to default folder.");
+				console.log("Could not stat theme file: " + themePath + ". Falling back to default folder.");
 				next();
 			}else{
 				res.statusCode = 200;
 				res.setHeader("Content-Type", contentType[ext]);			
 				res.setHeader("Content-Length", stat.size);
-				var readStream = fs.createReadStream(skinPath);
+				var readStream = fs.createReadStream(themePath);
 				readStream.pipe(res);
 			}
 		});

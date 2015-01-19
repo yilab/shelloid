@@ -30,10 +30,10 @@ exports.installGlobals = function(){
 	obj.installGlobals();	
 	sh.require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
 	sh.seq = lib_require("ctrl/seq");
-	sh.skin = function(skin){
+	sh.theme = function(theme){
 		var config = sh.serverCtx.appCtx.config;
-		config.skin = skin;
-		setSkin(config);
+		config.theme = theme;
+		setTheme(config);
 	}
 }
 
@@ -78,9 +78,9 @@ exports.loadAppConfig = function(appCtx){
 
 		config.dirs._views = config.dirs.views;
 		config.dirs.views = path.resolve(appCtx.basePath, appCtx.config.dirs.views);
-		config.dirs._pubSkins = config.dirs.pubSkins;
-		config.dirs.pubSkins = path.resolve(appCtx.basePath, config.dirs.pubSkins);
-		setSkin(config);
+		config.dirs._pubThemes = config.dirs.pubThemes;
+		config.dirs.pubThemes = path.resolve(appCtx.basePath, config.dirs.pubThemes);
+		setTheme(config);
 		config.dirs._pub = config.dirs.pub;
 		config.dirs.pub  = path.resolve(appCtx.basePath, config.dirs.pub);		
 		config.dirs._sim = config.dirs.sim;
@@ -166,10 +166,10 @@ exports.serverCtx = function(pathParam, envName){
 				auth: null,
 				interfaces:null,
 				sim: null,
-				skins: null
+				themes: null
 			},
 			config: {
-				skin: null,
+				theme: null,
 				viewEngine : "ejs",
 				dirs : {
 					routes: "src/routes", 
@@ -177,7 +177,7 @@ exports.serverCtx = function(pathParam, envName){
 					interfaces: "src/interfaces",
 					pub: "src/public",
 					views: "src/views",
-					pubSkins: "src/skins",
+					pubThemes: "src/themes",
 					data: "data",
 					uploads: "uploads",
 					init: "src/init.js",
@@ -299,13 +299,13 @@ function discoverNode(config){
 	});
 }
 
-function setSkin(config){
-	if(config.skin && config.skin !== ""){
-		config.dirs.skinnedPublic = path.resolve(config.dirs.pubSkins, config.skin);
-		config.dirs.skinnedViews = path.resolve(config.dirs.views, "skins", config.skin);
+function setTheme(config){
+	if(config.theme && config.theme !== ""){
+		config.dirs.themedPublic = path.resolve(config.dirs.pubThemes, config.theme);
+		config.dirs.themedViews = path.resolve(config.dirs.views, "themes", config.theme);
 	}else{
-		config.skin = "";
-		config.dirs.skinnedPublic = "";
-		config.dirs.skinnedViews = "";
+		config.theme = "";
+		config.dirs.themedPublic = "";
+		config.dirs.themedViews = "";
 	}	
 }
