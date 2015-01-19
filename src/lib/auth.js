@@ -39,7 +39,7 @@ exports.addAll = function(appCtx, done){
 
 var passportModules = {
 	"local" : {name: "passport-local", version: "*", configure : configureLocalAuth},
-	"google" : {name: "passport-google", version: "*", configure : configureProviderAuth},
+	"google" : {name: "passport-google-oauth", version: "*", configure : configureProviderAuth},
 	"facebook" : {name: "passport-facebook", version: "*", configure : configureProviderAuth},
 	"twitter" : {name: "passport-twitter", version: "*", configure : configureProviderAuth}
 }
@@ -134,18 +134,21 @@ function configureProviderAuth(appCtx, authMod, provider){
 	var AuthStrategy = authMod.passportMod.Strategy;
 	var strategyConfig;
 	var strategyFn;
+	var scope;
 	switch(provider){
 		case "google":
 			strategyConfig = 
 			{
-				returnURL: returnURL,
-				realm: appCtx.config.baseUrl
+				callbackURL: returnURL,
+				clientID: appCtx.config.auth.google.clientID,
+				clientSecret: appCtx.config.auth.google.clientSecret
 			};
-			strategyFn = function(req, identifier, profile, done) {
-				var authMsg = {identifier: identifier, profile: profile, type: provider};
+			strategyFn = function(req, accessToken, refreshToken	, profile, done) {
+				var authMsg = {profile: profile, type: provider};
 				invokeAuthModFn(authMsg, authMod, done);				
 			}
-
+			AuthStrategy = authMod.passportMod.OAuth2Strategy;
+			scope = {scope: "https://www.googleapis.com/auth/userinfo.email"};
 			break;
 		case "facebook" :
 			strategyConfig = 
@@ -186,13 +189,13 @@ function configureProviderAuth(appCtx, authMod, provider){
 	appCtx.app.get(authPath, passport.authenticate(provider));
 	
 	var routeFn = authRoute(provider, appCtx, authMod);	
-	
+
 	var route = {
 		annotations: {
 			path : authPath,
 			method: authMethod
 		},
-		fn: passport.authenticate(provider),
+		fn: passport.authenticate(provider, scope),
 		fnName: 'passport.authenticate("' + provider + '")',
 		relPath: "_internal",
 		type: "auth"
