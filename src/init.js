@@ -29,6 +29,7 @@ exports.installGlobals = function(){
 	}	
 	obj.installGlobals();	
 	sh.require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
+	sh.seq = lib_require("ctrl/seq");
 }
 
 exports.loadAppConfig = function(appCtx){

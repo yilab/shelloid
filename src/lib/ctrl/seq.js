@@ -18,6 +18,8 @@ var utils = lib_require("utils");
  function Seq(name, options){
  	ctrlBase.CtrlBase.call(this, name, options); 
 	this.prev = {};
+	this.stepParams =null;
+	this.checkError = options && options.checkError;
  }
  
  Seq.prototype = Object.create(ctrlBase.CtrlBase.prototype);
@@ -37,7 +39,7 @@ var utils = lib_require("utils");
 			for(var i=0;i<seq.doneHandlers.length;i++){
 				seq.doneHandlers[i].call(null);
 			}
-			seq.isExecuting = false;
+			seq.finalize();
 		}
 		return;
 	}
@@ -48,69 +50,31 @@ var utils = lib_require("utils");
 	this.executeStep(s);
  }
  
+ Seq.prototype.nextImpl = function(params){
+	var seq = this;
+	this.stepParams = params;
+	if(this.checkError && params.length > 0 && this.errorHandler && params[0]){
+		this.errorHandler(params[0]);
+		this.finalize(params[0]);
+	}else{	
+		process.nextTick(function(){
+			seq.executeImpl();
+		});
+	}
+ }
+ 
  Seq.prototype.executeStep = function(s){
 	var seq = this;
  	if(utils.isFunction(s.stepFn)){
-		var req = {};
-		var res = {};
-		req.res = res;
-		res.req = req;
-		req.prev = this.prev.req;
-		req.route = function(){
-			sh.sim.route(req, res);
-		}
-		req.skip = function(){
-			if(req.hasSkipped){
-				return;//already skipped
-			}
-			req.route = res.render = res.send = res.json = nop;
-			req.hasSkipped = true;
-			process.nextTick(function(){
-				seq.executeImpl();
-			});
-		}
-		req.repeat = function(){
-			req.doRepeat = true;
-		}
-		
-		res.end = res.json = res.send = function(obj){
-			console.log("Got response for: " + req.url);
-			if(s.successFn){
-				s.successFn(req, res);
-			}
-			if(req.doRepeat){
-				seq.stepsRemaining.unshift(s);
-			}
-			process.nextTick(function(){
-				seq.executeImpl();
-			});
-			return res;
-		}
-		res.render = function(p1, p2, p3){
-			if(s.successFn){
-				s.successFn(req, res);
-			}
-			if(req.doRepeat){
-				seq.stepsRemaining.unshift(s);
-			}			
-			process.nextTick(function(){
-				seq.executeImpl();
-			});	
-			return res;
-		}
-		this.prev.req = req;	
-		s.stepFn(req, res);
+		var param = seq.stepParams;
+		seq.stepParams = null;
+		s.stepFn.apply(null, params);
 	}else{
-		var ctrl = s.stepFn;
-		ctrl.finally(function(err){
-			if(!err){
-				process.nextTick(function(){
-					seq.executeImpl();
-				});
-			}else{
-				seq.finalize();
-				console.log("Terminating sequence: " + seq.name + " owing to errors in control block: "           + ctrl.name);
-			}
+		var ctrl = s.stepFn;//this is a control block.
+		ctrl.done(function(){
+			process.nextTick(function(){
+				seq.executeImpl();
+			});
 		});
 		ctrl.execute();
 	}
@@ -122,3 +86,4 @@ Seq.prototype.cancel = function(){
 
 function nop(){
 }
+

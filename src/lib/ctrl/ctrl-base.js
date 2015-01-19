@@ -10,14 +10,21 @@
 
 var utils = lib_require("utils");
 
-function CtrlBase(name){
+function CtrlBase(name, options){
 	this.name = name;
+	this.options = options;
 	this.stepBuf = [];
 	this.stepsExecuted = [];
 	this.stepsRemaining = [];
 	this.doneHandlers = [];
+	this.finallyHandlers = [];
+	this.errorHandler = null;
+	var next = function(){
+		this.nextImpl(Array.prototype.slice.call(arguments));
+	}
+	this.next = next.bind(this);
 }
- 
+
  CtrlBase.prototype.step = function(nameOrFn, maybeFn){
 	var name, fn; 
 	if(utils.isString(nameOrFn)){
@@ -61,8 +68,18 @@ function CtrlBase(name){
 	return this;
  }
  
+ 
+ CtrlBase.prototype.error = function(fn){
+	this.errorHandler = fn;
+ }
+ 
  CtrlBase.prototype.done = function(fn){
 	this.doneHandlers.push(fn);
+	return this;
+ }
+ 
+ CtrlBase.prototype.finally = function(fn){
+	this.finallyHandlers.push(fn);
 	return this;
  }
  
@@ -88,12 +105,26 @@ function CtrlBase(name){
  	sh.info(sh.caller("Empty ExecuteImpl() of CtrlBase called."));
  }
  
+ CtrlBase.prototype.nextImpl = function(){
+ 	sh.info(sh.caller("Empty nextImpl() of CtrlBase called."));
+ }
+ 
  CtrlBase.prototype.cancel = function(){
 	throw new Error(sh.caller("Cancel() not implemented"));
  }
  
  CtrlBase.prototype.repeat = function(){
 	this.doRepeat = true;
+ }
+ 
+ CtrlBase.prototype.finalize = function(err){
+	for(var i=0;i<this.finallyHandlers.length;i++){
+		this.finallyHandlers[i](err);
+	}
+	this.stepsExecuted = [];
+	this.stepsRemaining = [];
+	this.doRepeat = false;
+	this.isExecuting = false;
  }
   
  exports.CtrlBase = CtrlBase;

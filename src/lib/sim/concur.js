@@ -8,15 +8,16 @@
  You must not remove this notice, or any other, from this software.
  */
 var assert = require("assert");
-var ctrlBase = lib_require("sim/ctrl-base");
+var ctrlBase = lib_require("ctrl/ctrl-base");
 var utils = lib_require("utils");
   
- module.exports = function(name){
-	return new Concur(name);
+ module.exports = function(name, options){
+	return new Concur(name, options);
  }
  
- function Concur(name){
- 	ctrlBase.CtrlBase.call(this, name);
+ function Concur(name, options){
+ 	ctrlBase.CtrlBase.call(this, name, options);
+	this.hasErrors = false;
  }
  
 Concur.prototype = Object.create(ctrlBase.CtrlBase.prototype);
@@ -31,10 +32,12 @@ Concur.prototype = Object.create(ctrlBase.CtrlBase.prototype);
 					concur.executeImpl();
 				});
 			}
-			for(var i=0;i<concur.doneHandlers.length;i++){
-				concur.doneHandlers[i].call(null);
+			if(!concur.hasErrors){
+				for(var i=0;i<concur.doneHandlers.length;i++){
+					concur.doneHandlers[i].call(null);
+				}
 			}
-			concur.isExecuting = false;
+			concur.finalize();
 		}
 	);
 
@@ -92,7 +95,9 @@ Concur.prototype.executeStep = function(s, barrier){
 		});
 	}else{
 		var ctrl = s.stepFn;
-		ctrl.done(function(){
+		ctrl.finally(function(err){
+			console.log("Concurrent block " + concur.name + " detected errors in the executed block: "           + ctrl.name + ". Stopping further execution.");		
+			concur.hasErrors = true;
 			barrier.countDown();
 		});
 		process.nextTick(function(){

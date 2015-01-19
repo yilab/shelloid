@@ -14,7 +14,7 @@ function EasyDb(config) {
     this.queries = [];
     this.successH = [];
     this.errorH = null;
-    this.alwaysH = null;
+    this.finallyH = null;
 	this.config = config;
     this.proxy = this.config.support.modProxy.createProxy();
     this.transaction = false;
@@ -58,8 +58,8 @@ EasyDb.prototype.error = function (e) {
     return this;
 };
 
-EasyDb.prototype.always = function (a) {
-    this.alwaysH = a;
+EasyDb.prototype.finally = function (a) {
+    this.finallyH = a;
     return this;
 };
 
@@ -70,8 +70,8 @@ EasyDb.prototype.done = function (d) {
 
 
 EasyDb.prototype.clear = function () {
-    if (this.alwaysH)
-        this.alwaysH();
+    if (this.finallyH)
+        this.finallyH();
     this.config.pool.release(this.proxy.getClient());
     this.transaction = false;
     this.proxy.setClient(null);
