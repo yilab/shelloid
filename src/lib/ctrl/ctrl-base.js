@@ -113,7 +113,7 @@ function CtrlBase(name, options){
 	throw new Error(sh.caller("Cancel() not implemented"));
  }
  
- CtrlBase.prototype.repeat = function(){
+ CtrlBase.prototype.repeatBlock = function(){
 	this.doRepeat = true;
  }
  

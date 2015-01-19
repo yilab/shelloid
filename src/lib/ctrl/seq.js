@@ -45,6 +45,7 @@ var utils = lib_require("utils");
 	}
 	
 	var s = this.stepsRemaining.shift();
+	this.lastStep = s;
 	this.stepsExecuted.push(s);
 	assert(s);
 	this.executeStep(s);
@@ -83,6 +84,13 @@ var utils = lib_require("utils");
 Seq.prototype.cancel = function(){
 	this.finalize();
 } 
+
+Seq.prototype.repeatStep = function(){
+	if(this.lastStep){
+		this.stepsRemaining.unshift(this.lastStep);
+	}
+	this.lastStep = null;
+}
 
 function nop(){
 }
