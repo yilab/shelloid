@@ -17,6 +17,8 @@ Key features (at the moment):
 
 * Built-in login session management.
 
+* Built-in role-based access control with roles attached to controllers via annotations.
+
 * Supports specification-based verification of API requests/responses. Simple API specification which is automatically checked against requests for enhanced security, robustness. The application code will be cleaner owing to lesser checks required.
 
 * Built in cluster support by setting a single configuration flag. Builtin logging with cluster support.

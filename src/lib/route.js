@@ -105,7 +105,7 @@ function routeWrapper(route, appCtx){
 		if(!preprocessRequest(req, res, route)){
 			return;
 		}
-
+		
 		req.validated = function(){
 			res.json_ = res.json;
 			res.render_ = res.render;
@@ -128,6 +128,7 @@ function routeWrapper(route, appCtx){
 			res.json = function(obj){
 				res.sh = {pendingOp: "json", opParams: [obj]};
 				checkResponseObject(req, res, obj, ifcRes, appCtx);
+				return res;
 			};			
 
 			res.render = function(view, localsOrCallback, callback){
@@ -144,6 +145,7 @@ function routeWrapper(route, appCtx){
 				}else{
 					checkResponseObject(req, res, localsOrCallback, ifcRes, appCtx);
 				}
+				return res;
 			}
 			
 			var d0 = require('domain').create();
@@ -168,7 +170,7 @@ function routeWrapper(route, appCtx){
 			});
 		};
 		
-		req.assert = function(cond){
+		req.assert = function(cond){//TODO remove request.assert
 			if(!cond){
 				var msg = sh.caller("Assertion failed in function");
 				throw(new ValidateError(msg));
@@ -214,7 +216,7 @@ function routeWrapper(route, appCtx){
 		}
 		
 		if(doAuth){
-			checkAuth(req, res, postAuth);
+			checkAuth(req, res, route, postAuth);
 		}else{
 			postAuth(true);
 		}
@@ -278,7 +280,7 @@ function doCors(req, res, route, allowDomains){
 	}
 }
 
-function checkAuth(req, res, callback){	
+function checkAuth(req, res, route, callback){	
 	var auth = req.route.annotations.auth;	
 	var calledBack = false;
 	var success = function(obj){
@@ -301,6 +303,23 @@ function checkAuth(req, res, callback){
 			sh.error("Custom authentication module for: " + auth + " not found. Falling back on session auth");
 		}
 	}else{
-		callback(req.user ? true : false);
+		if(req.user){
+			callback(rolesOk(req, route));
+		}else{
+			callback(false);
+		}
 	}
+}
+
+function rolesOk(req, route){
+	var routeRoles = route.annotations.roles || ["user"];
+	var userRoles = req.user ? req.user.roles : null;
+	if(!userRoles){
+		sh.error("User does not have the necessary role privilege to access: " + req.url);
+		return false;
+	}
+	
+	return routeRoles.some(function(v){
+		return userRoles.indexOf(v) >= 0;
+	});
 }

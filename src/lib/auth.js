@@ -133,30 +133,44 @@ function configureProviderAuth(appCtx, authMod, provider){
 	
 	var AuthStrategy = authMod.passportMod.Strategy;
 	var strategyConfig;
-	
+	var strategyFn;
 	switch(provider){
 		case "google":
 			strategyConfig = 
-				{
-					returnURL: returnURL,
-					realm: appCtx.config.baseUrl
-				};
-				break;
+			{
+				returnURL: returnURL,
+				realm: appCtx.config.baseUrl
+			};
+			strategyFn = function(req, identifier, profile, done) {
+				var authMsg = {identifier: identifier, profile: profile, type: provider};
+				invokeAuthModFn(authMsg, authMod, done);				
+			}
+
+			break;
 		case "facebook" :
 			strategyConfig = 
-				{
-					callbackURL: returnURL,
-					clientID: appCtx.config.auth.facebook.appID,
-					clientSecret: appCtx.config.auth.facebook.appSecret,
-				};
+			{
+				callbackURL: returnURL,
+				clientID: appCtx.config.auth.facebook.appID,
+				clientSecret: appCtx.config.auth.facebook.appSecret,
+			};
+			strategyFn = function(req, accessToken, refreshToken, profile, done){
+				var authMsg = {profile: profile, type: provider};
+				invokeAuthModFn(authMsg, authMod, done);							
+			}
 			break;
 		case "twitter":
 			strategyConfig = 
-				{
-					consumerKey: appCtx.config.auth.twitter.consumerKey,
-					consumerSecret: appCtx.config.auth.twitter.consumerSecret,
-					callbackURL: returnURL				
-				};		
+			{
+				consumerKey: appCtx.config.auth.twitter.consumerKey,
+				consumerSecret: appCtx.config.auth.twitter.consumerSecret,
+				callbackURL: returnURL				
+			};
+			strategyFn = function(req, token, tokenSecret, profile, done) {
+				var authMsg = {profile: profile, type: provider};
+				invokeAuthModFn(authMsg, authMod, done);										
+			}
+			break;
 		default:
 			console.log("Does not support the provider: " + provider + 
 						". Module: " + authMod.relPath + " (" + authMod.fnName + ")");
@@ -165,13 +179,9 @@ function configureProviderAuth(appCtx, authMod, provider){
 	}
 	
 	strategyConfig.stateless = true;//to remove the need for session affinity when scaling out.
+	strategyConfig.passReqToCallback = true;
 	
-	passport.use(new AuthStrategy(strategyConfig,
-		function(identifier, profile, done) {
-			var authMsg = {identifier: identifier, profile: profile, type: provider};
-			invokeAuthModFn(authMsg, authMod, done);
-		}
-	));
+	passport.use(new AuthStrategy(strategyConfig, strategyFn));
 
 	appCtx.app.get(authPath, passport.authenticate(provider));
 	
