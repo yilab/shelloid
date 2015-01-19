@@ -67,11 +67,11 @@ exports.loadAppConfig = function(appCtx){
 		config.log.file = path.resolve(config.dirs.data, config.log.file);
 		
 		config.baseUrl = config.proto + "://" + config.domain;
-		if(!((config.port == 80 && config.proto == "http") && 
-			(config.port == 443 && config.proto == "https"))){
+		if(!((config.port == 80 && config.proto == "http") || 
+		   (config.port == 443 && config.proto == "https"))){
 			config.baseUrl = config.baseUrl + ":" + config.port;
 		}
-		
+		console.log(config.baseUrl);
 		var dateFormatInt = {"string": 0, "date": 1, "moment": 2};
 		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
 		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
