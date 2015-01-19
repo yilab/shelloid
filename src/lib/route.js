@@ -153,6 +153,9 @@ function routeWrapper(route, appCtx){
 			req.db = function(name){
 				return sh.db(name, d0);
 			}
+			req.seq = function(name, options){
+				return sh.seq(name, options, d0);
+			}															
 			d0.run(function(){
 				route.fn(req, res, sh.routeCtx);
 			});
@@ -187,6 +190,9 @@ function routeWrapper(route, appCtx){
 						req.db = function(name){
 							return sh.db(name, d);
 						}						
+						req.seq = function(name, options){
+							return sh.seq(name, options, d);
+						}												
 						d.run(function(){
 							ifcReq.validate(req, sh.routeCtx);
 						});
