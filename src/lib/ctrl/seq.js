@@ -54,10 +54,17 @@ var utils = lib_require("utils");
  Seq.prototype.nextImpl = function(params){
 	var seq = this;
 	this.stepParams = params;
-	if(this.checkError && params.length > 0 && this.errorHandler && params[0]){
-		this.errorHandler(params[0]);
-		this.finalize(params[0]);
-	}else{	
+	var proceed = true;
+	if(this.checkError){
+		if(params.length > 0 && this.errorHandler && params[0]){
+			this.errorHandler(params[0]);
+			this.finalize(params[0]);
+			proceed = false;
+		}
+		this.stepParams = params.slice(1);//omit the error param.
+	}
+	
+	if(proceed){
 		process.nextTick(function(){
 			seq.executeImpl();
 		});

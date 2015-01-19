@@ -17,6 +17,7 @@ function CtrlBase(name, options){
 	this.stepsExecuted = [];
 	this.stepsRemaining = [];
 	this.doneHandlers = [];
+	this.catchHandler = null;
 	this.finallyHandlers = [];
 	this.errorHandler = null;
 	var next = function(){
@@ -83,6 +84,12 @@ function CtrlBase(name, options){
 	return this;
  }
  
+ CtrlBase.prototype.catch = function(fn){
+	this.catchHandler.push(fn);
+	return this;
+ }
+ 
+ 
  CtrlBase.prototype.execute = function(){
 	var ctrl = this;
 	if(this.isExecuting){
@@ -92,10 +99,14 @@ function CtrlBase(name, options){
 	this.stepsRemaining = this.stepBuf.slice();
 	this.doRepeat = false;
 	if(this.stepsRemaining.length > 0){
-		this.isExecuting = true;	
-		process.nextTick(function(){
-			ctrl.executeImpl();
-		});
+		this.isExecuting = true;
+		if(this.catchHandler){
+			this.executeWithCatch();
+		}else{
+			process.nextTick(function(){
+				ctrl.executeImpl();
+			});
+		}
 	}else{
 		sh.info(sh.caller("Execute() on empty sequence"));
 	}
@@ -113,6 +124,7 @@ function CtrlBase(name, options){
 	throw new Error(sh.caller("Cancel() not implemented"));
  }
  
+ 
  CtrlBase.prototype.repeatBlock = function(){
 	this.doRepeat = true;
  }
@@ -126,5 +138,21 @@ function CtrlBase(name, options){
 	this.doRepeat = false;
 	this.isExecuting = false;
  }
-  
- exports.CtrlBase = CtrlBase;
+
+CtrlBase.prototype.executeWithCatch = function(){
+	var d = require('domain').create();
+	var ctrl = this;
+	d.add(ctrl);
+	d.on('error', function(er) {
+		console.log(er);
+		ctrl.catchHandler(er);
+		ctrl.finalize();
+	});
+	d.run(function(){
+		process.nextTick(function(){
+			ctrl.executeImpl();
+		});
+	});
+} 
+
+exports.CtrlBase = CtrlBase;

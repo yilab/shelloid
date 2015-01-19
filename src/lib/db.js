@@ -72,7 +72,10 @@ EasyDb.prototype.done = function (d) {
 EasyDb.prototype.clear = function () {
     if (this.finallyH)
         this.finallyH();
-    this.config.pool.release(this.proxy.getClient());
+	var client = this.proxy.getClient();
+	if(client){
+		this.config.pool.release(client);
+	}
     this.transaction = false;
     this.proxy.setClient(null);
 	this.firstQuery = true;
@@ -164,7 +167,21 @@ function _rollback_txn(easyDb) {
         easyDb.clear();
     }
 }
-EasyDb.prototype.execute = function (options) {
+
+EasyDb.prototype.execute = function(options){
+	var easydb = this;
+	var d = require('domain').create();
+	d.add(easydb);
+	d.on('error', function(er) {
+		console.log(er);
+		easydb.clear();
+	});
+	d.run(function(){
+		easydb.executeImpl();
+	});	
+}
+
+EasyDb.prototype.executeImpl = function (options) {
     if (!options)
         options = {};
     var easyDb = this;
