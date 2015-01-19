@@ -11,12 +11,12 @@ var assert = require("assert");
 var ctrlBase = lib_require("ctrl/ctrl-base");
 var utils = lib_require("utils");
  
- module.exports = function(name, options){
-	return new Seq(name, options);
+ module.exports = function(name, options, parentDomain){
+	return new Seq(name, options, parentDomain);
  }
  
- function Seq(name, options){
- 	ctrlBase.CtrlBase.call(this, name, options); 
+ function Seq(name, options, parentDomain){
+ 	ctrlBase.CtrlBase.call(this, name, options, parentDomain); 
 	this.prev = {};
 	this.stepParams =null;
 	this.checkError = options && options.checkError;

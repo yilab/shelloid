@@ -12,6 +12,7 @@ var app_pkg = lib_require("app_pkg"),
 	utils = lib_require("utils");
 
 exports.init = function(serverCtx, done){
+	shelloid.db = lib_require("db");
 	var types = [];
 	var databases = serverCtx.appCtx.config.databases;
 	for(var k in  databases){
@@ -82,4 +83,4 @@ var databaseSupport = {
 	
 };
 
-shelloid.db = lib_require("db").get;
+

@@ -101,9 +101,11 @@ function routeWrapper(route, appCtx){
 	
 	return function(req, res){
 		req.route = route;
+
 		if(!preprocessRequest(req, res, route)){
 			return;
 		}
+
 		req.validated = function(){
 			res.json_ = res.json;
 			res.render_ = res.render;
@@ -148,6 +150,9 @@ function routeWrapper(route, appCtx){
 					res.status(500).end("Internal Server Error.");	
 				}
 			});
+			req.db = function(name){
+				return sh.db(name, d0);
+			}
 			d0.run(function(){
 				route.fn(req, res, sh.routeCtx);
 			});
@@ -179,6 +184,9 @@ function routeWrapper(route, appCtx){
 							}
 							res.status(400).end("Bad Request");
 						});
+						req.db = function(name){
+							return sh.db(name, d);
+						}						
 						d.run(function(){
 							ifcReq.validate(req, sh.routeCtx);
 						});

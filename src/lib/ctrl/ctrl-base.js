@@ -10,9 +10,10 @@
 
 var utils = lib_require("utils");
 
-function CtrlBase(name, options){
+function CtrlBase(name, options, parentDomain){
 	this.name = name;
 	this.options = options;
+	this.parentDomain = parentDomain;
 	this.stepBuf = [];
 	this.stepsExecuted = [];
 	this.stepsRemaining = [];
@@ -145,7 +146,14 @@ CtrlBase.prototype.executeWithCatch = function(){
 	d.add(ctrl);
 	d.on('error', function(er) {
 		console.log(er);
-		ctrl.catchHandler(er);
+		try{
+			ctrl.catchHandler(er);
+		}catch(er_){
+			console.log("Catch handler threw error", er_);
+			if(ctrl.parentDomain){
+				ctrl.parentDomain.emit('error', er_);
+			}			
+		}
 		ctrl.finalize();
 	});
 	d.run(function(){

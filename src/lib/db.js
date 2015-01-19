@@ -10,7 +10,7 @@
 
 var utils = lib_require("utils");
 
-function EasyDb(config) {
+function EasyDb(config, parentDomain) {
     this.queries = [];
     this.successH = [];
     this.errorH = null;
@@ -20,6 +20,7 @@ function EasyDb(config) {
     this.transaction = false;
     this.doneH = null;
 	this.firstQuery = true;
+	this.parentDomain = parentDomain;
 	installQueryHandlers(this);
 }
 
@@ -173,8 +174,11 @@ EasyDb.prototype.execute = function(options){
 	var d = require('domain').create();
 	d.add(easydb);
 	d.on('error', function(er) {
-		console.log(er);
+		console.log("Clearing db instance");
 		easydb.clear();
+		if(easydb.parentDomain){
+			easydb.parentDomain.emit('error', er);
+		}
 	});
 	d.run(function(){
 		easydb.executeImpl();
@@ -220,10 +224,10 @@ EasyDb.prototype.executeImpl = function (options) {
     );
 };
 
-exports.get = function (name) {
+module.exports = function (name, parentDomain) {
 	var config = shelloid.serverCtx.appCtx.config.databases[name];
 	if(!config){
 		throw new Error(sh.caller("Unknown DB name: " + name));
 	}
-    return new EasyDb(config);
+    return new EasyDb(config, parentDomain);
 };
