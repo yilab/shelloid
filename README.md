@@ -3,7 +3,7 @@ Shelloid
 
 The Node.js Web Application Server that simplifies the development of secure & dependable web applications/services.
 
-Features built-in simulator for controlled functional testing of application/controller logic (work in progress - see below).
+Features built-in simulator for controlled functional testing of application/controller logic.
 
 Key features (at the moment):
 
@@ -21,13 +21,19 @@ Key features (at the moment):
 
 * Built in cluster support by setting a single configuration flag. Builtin logging with cluster support.
 
-* Simplified DB API with built-in connection pooling.
+* Simplified DB API with built-in connection pooling and close to synchronous-style programming.
+
+* Built in proper error and exception handling that takes care of sending error responses and freeing DB connections.
+
+* Built in simple and versatile sequencing API that avoids callback hell and results in readily understandable code.
 
 * Built-in simulator for controlled functional testing of application/controller logic (work in progress - please see sim/main.js in the shelloid-sample-app). Will support control of the flow of time as well as specification and verification of temporal properties.
 
 * Simple config specification for allowing cross-origin requests (implementation complying with CORS standard).
 
 * Auto detection of the current node of execution based on specified node names to IP/hostname mapping - useful for distributed and cloud deployments.
+
+* Support for easily configurable application UI themes.
 
 Currently the software is in alpha stage with featured being added on a daily (even hourly) basis. First full featured beta release is expected to happen in another week or so. After that we will be putting up more documentation.
 
