@@ -30,7 +30,7 @@ exports.createPool = function(config){
 				user: config.user,
 				password: config.password,
 				database: config.database,
-				timezone: "+0000"
+				timezone: config.timezone
 			}
 		);
 		c.connect();
