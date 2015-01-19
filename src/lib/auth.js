@@ -102,7 +102,7 @@ function configureLocalAuth(appCtx, authMod){
 		}
 	));
 
-	var routeFn = authRoute("local", appCtx);
+	var routeFn = authRoute("local", appCtx, authMod);
 	
 	var route = {
 		annotations: {
@@ -175,7 +175,7 @@ function configureProviderAuth(appCtx, authMod, provider){
 
 	appCtx.app.get(authPath, passport.authenticate(provider));
 	
-	var routeFn = authRoute(provider, appCtx);	
+	var routeFn = authRoute(provider, appCtx, authMod);	
 	
 	var route = {
 		annotations: {
@@ -216,22 +216,25 @@ function invokeAuthModFn(authMsg, authMod, done){
 		done(err);
 	}
 	errorFn.app = errorFn;
-	authMod.fn(authMsg, successFn, errorFn);
+	authMod.fn(authMsg, successFn, errorFn, sh.routeCtx);
 }
 
-function authRoute(authType, appCtx){
+function authRoute(authType, appCtx, authMod){
+	var successRedirect = authMod.annotations.success || appCtx.config.auth.successRedirect;
+	var failureRedirect = authMod.annotations.failure || appCtx.config.auth.failureRedirect;
+
 	var route = 
 		function(req, res, next) {
 		  passport.authenticate(authType, function(err, user, info) {
 				if (err) { return next(err); }
 				if (!user) { 
-					return res.redirect(appCtx.config.auth.failureRedirect); 
+					return res.redirect(failureRedirect); 
 				}
 				req.logIn(user, function(err) {
 					if (err) { 
 						return next(err); 
 					}
-					return res.redirect(appCtx.config.auth.successRedirect);
+					return res.redirect(successRedirect);
 				});
 			})(req, res, next);
 		};

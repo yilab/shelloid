@@ -96,7 +96,7 @@ function _execute_queries(easyDb) {
             easyDb.proxy.commit(
                 function (err, rows) {
                     if (err) {
-                        logger.error("COMMIT failed: " + err);
+                        sh.error("COMMIT failed: " + err);
                         easyDb.errorH(err);
                     } else {
                         if (easyDb.doneH)
@@ -122,7 +122,7 @@ function _execute_queries(easyDb) {
 	var callback = 
         function (err) {			
             if (err) {
-                logger.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
+                sh.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
                 if (easyDb.errorH)
                     easyDb.errorH(err);
                 _rollback_txn(easyDb);
@@ -149,7 +149,7 @@ function _rollback_txn(easyDb) {
         easyDb.proxy.rollback(
             function (err, rows) {
                 if (err) {
-                    logger.error("cannot rollback transaction %s", err);
+                    sh.error("cannot rollback transaction %s", err);
                 }
                 easyDb.clear();
             }
@@ -196,7 +196,7 @@ EasyDb.prototype.executeImpl = function (options) {
                     proxy.startTransaction(
                         function (err, rows) {
                             if (err) {
-                                logger.error("Start transaction failed: %s", err);
+                                sh.error("Start transaction failed: %s", err);
                                 if (easyDb.errorH)
                                     easyDb.errorH(err);
                                 easyDb.clear();
