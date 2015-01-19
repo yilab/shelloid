@@ -87,6 +87,7 @@ EasyDb.prototype.cancel = function () {//cancel pending queries.
     this.queries = [];
     this.successH = [];
 	this.clear();//ADDED
+	return this;
 };
 
 function _execute_queries(easyDb) {
@@ -127,21 +128,10 @@ function _execute_queries(easyDb) {
                 _rollback_txn(easyDb);
             } else {
                 var successF = easyDb.successH.shift();
-                var proceed = true;					
                 if (successF) {
-                    try {
-                        successF.apply(null, Array.prototype.slice.call(arguments, 1));
-                    }
-                    catch (e) {
-                        if (easyDb.errorH)
-                            easyDb.errorH(e);
-                        _rollback_txn(easyDb);
-                        proceed = false;
-                    }
+                    successF.apply(null, Array.prototype.slice.call(arguments, 1));
                 }
-                if (proceed) {
-                    _execute_queries(easyDb);
-                }
+                _execute_queries(easyDb);
             }
         };
 	var fnName = queryInfo.name;
@@ -173,8 +163,11 @@ EasyDb.prototype.execute = function(options){
 	var easydb = this;
 	var d = require('domain').create();
 	d.add(easydb);
-	d.on('error', function(er) {
-		easydb.clear();
+	d.on('error', function(er) {	
+		_rollback_txn(easydb);
+        if (easydb.errorH){
+			easydb.errorH(er);
+		}
 		if(easydb.parentDomain){
 			easydb.parentDomain.emit('error', er);
 		}

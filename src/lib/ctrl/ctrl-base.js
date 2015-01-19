@@ -73,6 +73,7 @@ function CtrlBase(name, options, parentDomain){
  
  CtrlBase.prototype.error = function(fn){
 	this.errorHandler = fn;
+	return this;
  }
  
  CtrlBase.prototype.done = function(fn){
@@ -128,6 +129,7 @@ function CtrlBase(name, options, parentDomain){
  
  CtrlBase.prototype.repeatBlock = function(){
 	this.doRepeat = true;
+	return this;
  }
  
  CtrlBase.prototype.finalize = function(err){

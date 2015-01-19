@@ -1,7 +1,7 @@
 {
   "name": "shelloid",
   "author" : "jayaraj-poroor",
-  "version": "0.1.4-a1",
+  "version": "0.1.5-a1",
   "description": "Simple and secure Node.js web application server.",
   "main": "src/main.js",
   "scripts": {
@@ -41,7 +41,7 @@
 	"lusca" : "1.0.2",
 	"passport" : "0.2.1",
 	"shelloid-sessionstore" : "*",
-	"shelloid-consolidate" : "*",
+	"shelloid-consolidate" : "0.0.2",
 	"npm" : "1.4.28",
 	"moment": "2.9.0",
 	"validator": "3.27.0",

@@ -8,7 +8,7 @@
  You must not remove this notice, or any other, from this software.
  */
 var domain = require('domain');
-
+var path = require("path");
 var utils = lib_require("utils"),
 	validate = 	lib_require("validate");
 
@@ -132,10 +132,10 @@ function routeWrapper(route, appCtx){
 
 			res.render = function(view, localsOrCallback, callback){
 				var dirs = appCtx.config.dirs;
-				if(dirs.skinnedViews !== ""){
-					var viewFile = path.join(dirs.skinnedViews, view);
+				if(dirs.themedViews !== ""){
+					var viewFile = path.join(dirs.themedViews, view);
 					if(utils.fileExists(viewFile)){
-						view = "skins/" + appCtx.config.skin + "/" + view;
+						view = "themes/" + appCtx.config.theme + "/" + view;
 					}
 				}
 				res.sh = {pendingOp: "render", opParams: [view, localsOrCallback, callback]};			

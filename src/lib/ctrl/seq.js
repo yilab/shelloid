@@ -19,7 +19,11 @@ var utils = lib_require("utils");
  	ctrlBase.CtrlBase.call(this, name, options, parentDomain); 
 	this.prev = {};
 	this.stepParams =null;
-	this.checkError = options && options.checkError;
+	if(options && options.checkError === false){
+		this.checkError = false;
+	}else{
+		this.checkError = true;
+	}
  }
  
  Seq.prototype = Object.create(ctrlBase.CtrlBase.prototype);
@@ -74,7 +78,7 @@ var utils = lib_require("utils");
  Seq.prototype.executeStep = function(s){
 	var seq = this;
  	if(utils.isFunction(s.stepFn)){
-		var param = seq.stepParams;
+		var params = seq.stepParams;
 		seq.stepParams = null;
 		s.stepFn.apply(null, params);
 	}else{
