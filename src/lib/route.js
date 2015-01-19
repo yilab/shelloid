@@ -130,12 +130,19 @@ function routeWrapper(route, appCtx){
 				checkResponseObject(req, res, obj, ifcRes, appCtx);
 			};			
 
-			res.render = function(p1, p2, p3){
-				res.sh = {pendingOp: "render", opParams: [p1, p2, p3]};			
-				if(!utils.isObject(p2)){
-					res.render_(p1, p2, p3);
+			res.render = function(view, localsOrCallback, callback){
+				var dirs = appCtx.config.dirs;
+				if(dirs.skinnedViews !== ""){
+					var viewFile = path.join(dirs.skinnedViews, view);
+					if(utils.fileExists(viewFile)){
+						view = "skins/" + appCtx.config.skin + "/" + view;
+					}
+				}
+				res.sh = {pendingOp: "render", opParams: [view, localsOrCallback, callback]};			
+				if(!utils.isObject(localsOrCallback)){
+					res.render_(view, localsOrCallback, callback);
 				}else{
-					checkResponseObject(req, res, p2, ifcRes, appCtx);
+					checkResponseObject(req, res, localsOrCallback, ifcRes, appCtx);
 				}
 			}
 			

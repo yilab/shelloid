@@ -49,15 +49,6 @@ exports.isAbsolutePath = function(p){
 	return p.startsWith("/") || p.startsWith("\\") || (p.search(/.:[\/\\]/) >= 0)
 }
 
-exports.joinIfRelative = function(basePath, targetPath){
-	if(!targetPath) return null;
-	var absPath = targetPath;
-	if(!module.exports.isAbsolutePath(targetPath)){
-		absPath = path.normalize(path.join(basePath, targetPath));
-	}
-	return absPath;
-}
-
 exports.readJsonFile = function(filePath, infoTxt){
 	var res = "Unknown Error";
 	if(module.exports.fileExists(filePath)){

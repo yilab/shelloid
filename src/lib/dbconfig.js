@@ -13,6 +13,7 @@ var app_pkg = lib_require("app_pkg"),
 
 exports.init = function(serverCtx, done){
 	shelloid.db = lib_require("db");
+	shelloid.serverCtx.databaseSupport = databaseSupport;
 	var types = [];
 	var databases = serverCtx.appCtx.config.databases;
 	for(var k in  databases){
@@ -56,7 +57,7 @@ exports.init = function(serverCtx, done){
 				function(mod){
 					supportThis.mod = mod;
 					supportThis.modProxy = lib_require("db/"+supportType + "-proxy");
-					supportThis.modProxy.init(support);
+					supportThis.modProxy.init(supportThis);
 					sh.info("Database module type " + supportType + " loaded.");
 					barrier.countDown();
 				}

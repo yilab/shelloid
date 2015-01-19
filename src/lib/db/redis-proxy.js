@@ -23,7 +23,6 @@ exports.ops = ["setex", "select", "del" , "keys"];
 
 exports.createPool = function(config){
 	var redis = support.mod;
-
 	var createFn = 	function (callback) {
 		config.port = config.port ? config.port : 6379;
 		config.host = config.host ? config.host : "localhost";

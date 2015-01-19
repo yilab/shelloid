@@ -174,7 +174,6 @@ EasyDb.prototype.execute = function(options){
 	var d = require('domain').create();
 	d.add(easydb);
 	d.on('error', function(er) {
-		console.log("Clearing db instance");
 		easydb.clear();
 		if(easydb.parentDomain){
 			easydb.parentDomain.emit('error', er);

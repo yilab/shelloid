@@ -30,6 +30,11 @@ exports.installGlobals = function(){
 	obj.installGlobals();	
 	sh.require = require("./lib/sys_require.js");//for app code to require Shelloid's node_modules
 	sh.seq = lib_require("ctrl/seq");
+	sh.skin = function(skin){
+		var config = sh.serverCtx.appCtx.config;
+		config.skin = skin;
+		setSkin(config);
+	}
 }
 
 exports.loadAppConfig = function(appCtx){
@@ -48,18 +53,18 @@ exports.loadAppConfig = function(appCtx){
 		var config = appCtx.config = utils.merge(appCtx.config, config);
 		assert(config.dirs.data !== undefined);
 		config.dirs._data = config.dirs.data;//save for later reference
-		config.dirs.data = utils.joinIfRelative(appCtx.basePath, config.dirs.data);
+		config.dirs.data = path.resolve(appCtx.basePath, config.dirs.data);
 		utils.mkdirIfNotExists(config.dirs.data, 
 								"Data directory: " + config.dirs._data + 
 								"(" + config.dirs.data+ ") does not exist. Trying to create one.");								
 		config.dirs._uploads = config.dirs.uploads;
-		config.dirs.uploads = utils.joinIfRelative(config.dirs.data, config.dirs.uploads);
+		config.dirs.uploads = path.resolve(config.dirs.data, config.dirs.uploads);
 		utils.mkdirIfNotExists(config.dirs.uploads, 
 							"Uploads directory: " + config.dirs.uploads + 
 							"(" + config.dirs.uploads+ ") does not exist. Trying to create one.");
 
 		config.log._file = config.log.file;
-		config.log.file = utils.joinIfRelative(config.dirs.data, config.log.file);
+		config.log.file = path.resolve(config.dirs.data, config.log.file);
 		
 		config.baseUrl = config.proto + "://" + config.domain;
 		if(!((config.port == 80 && config.proto == "http") && 
@@ -70,21 +75,30 @@ exports.loadAppConfig = function(appCtx){
 		var dateFormatInt = {"string": 0, "date": 1, "moment": 2};
 		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
 		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
-		
+
+		config.dirs._views = config.dirs.views;
+		config.dirs.views = path.resolve(appCtx.basePath, appCtx.config.dirs.views);
+		config.dirs._pubSkins = config.dirs.pubSkins;
+		config.dirs.pubSkins = path.resolve(appCtx.basePath, config.dirs.pubSkins);
+		setSkin(config);
+		config.dirs._pub = config.dirs.pub;
+		config.dirs.pub  = path.resolve(appCtx.basePath, config.dirs.pub);		
 		config.dirs._sim = config.dirs.sim;
-		config.dirs.sim = utils.joinIfRelative(appCtx.basePath, config.dirs.sim);
+		config.dirs.sim = path.resolve(appCtx.basePath, config.dirs.sim);
 		config.https._key = config.https.key;
 		config.https._cert = config.https.cert;
 		config.https._pfx = config.https.pfx;
 		config.https._ca = config.https.ca;
-		config.https.key = utils.joinIfRelative(appCtx.basePath, config.https.key);
-		config.https.cert = utils.joinIfRelative(appCtx.basePath, config.https.cert);
-		config.https.pfx = utils.joinIfRelative(appCtx.basePath, config.https.pfx);
+		config.https.key = config.https.key ? path.resolve(appCtx.basePath, config.https.key) : null;
+		config.https.cert = config.https.cert ? path.resolve(appCtx.basePath, config.https.cert) : null;
+		config.https.pfx = config.https.pfx ? path.resolve(appCtx.basePath, config.https.pfx) : null;
 		if(!utils.isArray(config.https.ca)){
 			config.https.ca = [config.https.ca];
 		}
 		for(var i=0;i<config.https.ca.length;i++){
-			config.https.ca[i] = utils.joinIfRelative(appCtx.basePath, config.https.ca[i]);
+			if(config.https.ca[i]){
+				config.https.ca[i] = path.resolve(appCtx.basePath, config.https.ca[i]);
+			}
 		}
 		discoverNode(config);
 		if(!utils.isArray(config.allowDomains)){
@@ -151,9 +165,11 @@ exports.serverCtx = function(pathParam, envName){
 				routes: null,
 				auth: null,
 				interfaces:null,
-				sim: null
+				sim: null,
+				skins: null
 			},
 			config: {
+				skin: null,
 				viewEngine : "ejs",
 				dirs : {
 					routes: "src/routes", 
@@ -161,6 +177,7 @@ exports.serverCtx = function(pathParam, envName){
 					interfaces: "src/interfaces",
 					pub: "src/public",
 					views: "src/views",
+					pubSkins: "src/skins",
 					data: "data",
 					uploads: "uploads",
 					init: "src/init.js",
@@ -232,7 +249,7 @@ exports.serverCtx = function(pathParam, envName){
 }
 
 exports.appInit = function(done){
-	var initJs = utils.joinIfRelative(sh.serverCtx.appCtx.basePath, sh.serverCtx.appCtx.config.dirs.init);	
+	var initJs = path.resolve(sh.serverCtx.appCtx.basePath, sh.serverCtx.appCtx.config.dirs.init);	
 	sh.routeCtx = {config: sh.serverCtx.appCtx.config, env: sh.serverCtx.appCtx.env, app: sh.serverCtx.appCtx};
 	if(utils.fileExists(initJs)){
 		var init = require(initJs);
@@ -280,4 +297,15 @@ function discoverNode(config){
 			config.node.is[name] = false;
 		}
 	});
+}
+
+function setSkin(config){
+	if(config.skin && config.skin !== ""){
+		config.dirs.skinnedPublic = path.resolve(config.dirs.pubSkins, config.skin);
+		config.dirs.skinnedViews = path.resolve(config.dirs.views, "skins", config.skin);
+	}else{
+		config.skin = "";
+		config.dirs.skinnedPublic = "";
+		config.dirs.skinnedViews = "";
+	}	
 }

@@ -14,7 +14,7 @@ var annotation = lib_require("annotation");
 
 exports.loadRoutes = function(serverCtx, done)
 {
-	var p = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.routes);
+	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.routes);
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.routes = p;	
 	loadModules(serverCtx, p, "route", serverCtx.appCtx.routes, done);
@@ -22,7 +22,7 @@ exports.loadRoutes = function(serverCtx, done)
 
 exports.loadAuthMods = function(serverCtx, done)
 {
-	var p = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.auth);
+	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.auth);
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.authMods = p;	
 	loadModules(serverCtx, p, "auth", serverCtx.appCtx.authMods, done);
@@ -30,7 +30,7 @@ exports.loadAuthMods = function(serverCtx, done)
 
 exports.loadInterfaces = function(serverCtx, done)
 {
-	var p = utils.joinIfRelative(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.interfaces);
+	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.interfaces);
 	p = path.normalize(p);
 	serverCtx.appCtx.folders.interfaces = p;	
 	loadModules(serverCtx, p, "interface", serverCtx.appCtx.interfaces, done);

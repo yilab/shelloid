@@ -20,24 +20,23 @@ var express = require('express'),
 	passport = require("passport");
 
 var utils = lib_require("utils");
+var skin = lib_require("skin");
 
 exports.newInstance = function(appCtx){
-	var staticPath = path.join(appCtx.basePath, appCtx.config.dirs.pub);
 	var sessionName = appCtx.config.session.name;
 	var sessionSecret = appCtx.config.session.secret;
 	var uploadsDir = appCtx.config.uploadsDir;
 
-	var views = utils.joinIfRelative(appCtx.basePath, appCtx.config.dirs.views);
-	appCtx.folders.views = views;	
 	var app = express();
-	app.set('views', views);
+	app.set('views', appCtx.config.dirs.views);
 	consolidate.configureExpress(app);
 	if(appCtx.config.viewEngine){
 		app.set('view engine', appCtx.config.viewEngine);		
 	}else{
 		sh.info("No default view engine configured");
 	}
-	app.use(express.static(staticPath));	
+	app.use(skin);
+	app.use(express.static(appCtx.config.dirs.pub));	
 	//app.use(express.favicon());
 	app.use(cookieParser());
 	app.use(bodyParser.json());
