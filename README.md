@@ -39,17 +39,32 @@ Key features (at the moment):
 
 Currently the software is in alpha stage with featured being added on a daily (even hourly) basis. First full featured beta release is expected to happen in another week or so. After that we will be putting up more documentation.
 
-Meanwhile you could try this to get an idea of the platform:
+The prelaunch web app (including its admin console) for the cloud log management platform for Shelloid (http://shelloid.com) is built using Shelloid.
+
+This app is released in open source so that it can serve as a real-life (used by our live prelaunch site) but simple enough example. 
+
+Installation:
+=============
 
 npm install -g shelloid
 
-git clone https://github.com/shelloid/shelloid-sample-app.
 
-shelloid shelloid-sample-app
+Sample app
+============
+
+git clone https://github.com/shelloid/shelloid-prelaunch-signup
+
+Please note that you will need to get (1) Mailgun API key/secret, (2) Google OAuth2 client key/secret and specify in the configuration file. Also a Mysql database (schema available in src/db) will need to be created for storing signup information. 
+
+Copy config.sample.json to config.json and make the necessary modifications.
+
+Run:
+
+shelloid shelloid-prelaunch-signup
 
 This will start up the web application at port 8080. You can take a look at the sample application structure.
 
-shelloid shelloid-sample-app sim [to try out the simulator - this is work in progress]
+shelloid shelloid-prelaunch-signup sim [to try out the simulator - this is work in progress]
 
 Please visit http://shelloid.org for more information and to register to Shelloid mailing list (low traffic).
 

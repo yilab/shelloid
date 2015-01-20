@@ -55,6 +55,12 @@ function addAuthMod(appCtx, authMod, barrier){
 	
 	var authType = authMod.annotations.auth;
 	
+	if(appCtx.config.auth[authType] && appCtx.config.auth[authType].ignore){
+		console.log("Ignoring auth module: " + authMod.relPath + "(" + authMod.fnName + ")" + " since ignore config flag is set for: " + authType);
+		barrier.countDown();
+		return;
+	}
+	
 	if(!utils.isString(authType)){
 		console.log("@auth annotation must be a string: " + authMod.relPath);		
 		appCtx.hasErrors = true;

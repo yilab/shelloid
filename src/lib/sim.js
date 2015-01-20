@@ -107,7 +107,7 @@ SimApp.prototype.method = function(method, path, fn){
 	this.routes.push(route);
 }
 
-var methods = ["get", "post", "delete", "options"];
+var methods = ["get", "post", "delete", "options", "all"];
 
 function initSimApp(){
 	for(var i =0;i<methods.length;i++){
