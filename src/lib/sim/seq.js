@@ -37,7 +37,7 @@ var utils = lib_require("utils");
 			for(var i=0;i<seq.doneHandlers.length;i++){
 				seq.doneHandlers[i].call(null);
 			}
-			seq.isExecuting = false;
+			seq.finalize();
 		}
 		return;
 	}

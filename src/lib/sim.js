@@ -35,6 +35,7 @@
 		sh.info("Starting simulator run.");
 		simMain(function(){
 			sh.info("Simulator run over.");
+			process.exit(0);
 		});
 	}
  }
@@ -83,16 +84,24 @@
  }
 
 function defaultHandlers(req, res, route){
-	res.status = function(s){
-		console.log("Response status: " + s + " for " + req.url);
-		res.status = s;
-		return res;
+	if(!req.status){
+		res.status = function(s){
+			console.log("Response status: " + s + " for " + req.url);
+			res.status = s;
+			return res;
+		}
 	}
 	
-	res.write = res.end = res.render = res.json = res.send = function(obj){
+	var fn = function(obj){
 		console.log("Response for " + req.url, obj);
 		return res;
 	}	
+	
+	res.write = res.write || fn;
+	res.end = res.end || fn;
+	res.render = res.render || fn;
+	res.json = res.json || fn;
+	res.send = res.send || fn;	
 }
  
  function SimApp(){

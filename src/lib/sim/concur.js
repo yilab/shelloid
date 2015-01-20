@@ -73,8 +73,9 @@ Concur.prototype.executeStep = function(s, barrier){
 				process.nextTick(function(){
 					concur.executeStep(s, barrier);
 				});
+			}else{
+				barrier.countDown();
 			}
-			barrier.countDown();
 			console.log("Got response for: " + req.url);
 			return res;
 		}
@@ -86,8 +87,9 @@ Concur.prototype.executeStep = function(s, barrier){
 				process.nextTick(function(){
 					concur.executeStep(s, barrier);
 				});
-			}			
-			barrier.countDown();
+			}else{			
+				barrier.countDown();
+			}
 			return res;
 		}
 		process.nextTick(function(){
@@ -96,8 +98,10 @@ Concur.prototype.executeStep = function(s, barrier){
 	}else{
 		var ctrl = s.stepFn;
 		ctrl.finally(function(err){
-			console.log("Concurrent block " + concur.name + " detected errors in the executed block: "           + ctrl.name + ". Stopping further execution.");		
-			concur.hasErrors = true;
+			if(err){
+				console.log("Concurrent block " + concur.name + " detected errors in the executed block: "           + ctrl.name + ". Stopping further execution.");		
+				concur.hasErrors = true;
+			}
 			barrier.countDown();
 		});
 		process.nextTick(function(){
