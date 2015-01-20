@@ -91,11 +91,12 @@ function routeWrapper(route, appCtx){
 	
 	var modIfcReq, modIfcRes;
 	var interfaceName = route.annotations["interface"];
+
 	if(interfaceName){
 		modIfcReq = appCtx.interfaces[interfaceName + "/req"];
 		modIfcRes = appCtx.interfaces[interfaceName + "/res"];
 	}
-	
+		
 	var ifcReq = modIfcReq ? modIfcReq.fn : false;
 	var ifcRes = modIfcRes ? modIfcRes.fn : false;
 	

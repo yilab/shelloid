@@ -12,7 +12,6 @@ var utils = lib_require("utils");
 var util = require("util");
 
 exports.requestOk = function(req, ifc, appCtx){	
-
 	var contentType = getContentType(ifc);
 	var foundType = req.headers["content-type"];
 	if(contentType && (!foundType || !foundType.startsWith(contentType))){
@@ -21,7 +20,7 @@ exports.requestOk = function(req, ifc, appCtx){
 				   ". Found: " + foundType);
 		return false;
 	}
-	
+
 	if(!ifc){
 		return genericCheck(req.body, appCtx.config.validate.req, req) &&
 			   genericCheck(req.query, appCtx.config.validate.req, req);
@@ -116,7 +115,8 @@ var shortContentTypes = {
 	"json" : "application/json",
 	"html" : "text/html",
 	"text" : "text/plain",
-	"file" : "multipart/form-data"
+	"file" : "multipart/form-data",
+	"form" : "application/x-www-form-urlencoded"
 };
 
 function typeError(opath, req, res, requiredType, paramNotFound){

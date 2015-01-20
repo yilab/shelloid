@@ -76,7 +76,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 										url: url
 									};
 								if(modType == "interface"){
-									mods[mod.relPath + "/" + f] = mod;
+									mods[url] = mod;
 								}else{
 									mods.push(mod);
 								}
