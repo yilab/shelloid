@@ -25,6 +25,8 @@ Key features (at the moment):
 
 * Simplified DB API with built-in connection pooling and close to synchronous-style programming.
 
+* Support for declarative SQL query specifications as part of annotations. 
+
 * Built in proper error and exception handling that takes care of sending error responses and freeing DB connections.
 
 * Built in simple and versatile sequencing API that avoids callback hell and results in readily understandable code.

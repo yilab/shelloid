@@ -35,6 +35,7 @@ exports.installGlobals = function(){
 		config.theme = theme;
 		setTheme(config);
 	}
+	sh.annotations = {};
 }
 
 exports.loadAppConfig = function(appCtx){

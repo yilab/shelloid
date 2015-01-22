@@ -161,7 +161,7 @@ function routeWrapper(route, appCtx){
 				}
 			});
 			req.db = function(name){
-				return sh.db(name, d0);
+				return sh.db(name, d0, route);
 			}
 			req.seq = function(name, options){
 				return sh.seq(name, options, d0);

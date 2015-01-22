@@ -9,6 +9,7 @@
  */
 
 var utils = lib_require("utils");
+var path = require("path");
 
 function EasyDb(config, parentDomain) {
     this.queries = [];
@@ -36,7 +37,7 @@ function installQueryHandlers(easyDb){
 				var param = queryParam;
 				if(!utils.isFunction(queryParam)){
 					 if(!easyDb.firstQuery){
-						throw new Error(sh.caller("Expecting a query generator function."));
+						easyDb.throwError(sh.caller("Expecting a query generator function."));
 					}
 					easyDb.firstQuery = false;
 					param = Array.prototype.slice.call(arguments);
@@ -82,6 +83,27 @@ EasyDb.prototype.clear = function () {
 	this.firstQuery = true;
 };
 
+EasyDb.prototype.throwError = function(msg){
+	var easydb = this;
+	var er = new Error(msg);
+	if(easydb.parentDomain){
+		easydb.parentDomain.emit('error', er);
+	}else{
+		throw er;
+	}
+}
+
+EasyDb.prototype.processError = function(msg){
+	var easydb = this;
+	if(msg.stack){
+		console.log("DB error stack: ", msg.stack);
+	}
+	if(easydb.errorH){
+		easydb.errorH(msg);
+	}else{
+		easydb.throwError(msg);
+	}
+}
 
 EasyDb.prototype.cancel = function () {//cancel pending queries.
     this.queries = [];
@@ -97,7 +119,7 @@ function _execute_queries(easyDb) {
                 function (err, rows) {
                     if (err) {
                         sh.error("COMMIT failed: " + err);
-                        easyDb.errorH(err);
+                        easyDb.processError(err);
                     } else {
                         if (easyDb.doneH)
                             easyDb.doneH();
@@ -122,10 +144,9 @@ function _execute_queries(easyDb) {
 	var callback = 
         function (err) {			
             if (err) {
-                sh.error("Query failed: " + query.query + ", params: " + JSON.stringify(query.params) + " error: " + err);
-                if (easyDb.errorH)
-                    easyDb.errorH(err);
+                sh.error("Query failed: " + JSON.stringify(queryParam) + " error: " + err);
                 _rollback_txn(easyDb);
+				easyDb.processError(err);				
             } else {
                 var successF = easyDb.successH.shift();
                 if (successF) {
@@ -165,12 +186,7 @@ EasyDb.prototype.execute = function(options){
 	d.add(easydb);
 	d.on('error', function(er) {	
 		_rollback_txn(easydb);
-        if (easydb.errorH){
-			easydb.errorH(er);
-		}
-		if(easydb.parentDomain){
-			easydb.parentDomain.emit('error', er);
-		}
+		easydb.processError(er);
 	});
 	d.run(function(){
 		easydb.executeImpl();
@@ -216,10 +232,53 @@ EasyDb.prototype.executeImpl = function (options) {
     );
 };
 
-module.exports = function (name, parentDomain) {
+module.exports = function (name, parentDomain, mod) {
 	var config = shelloid.serverCtx.appCtx.config.databases[name];
 	if(!config){
 		throw new Error(sh.caller("Unknown DB name: " + name));
 	}
-    return new EasyDb(config, parentDomain);
+    var db = new EasyDb(config, parentDomain);
+	
+	
+	var annotations = [];
+	if(mod){
+		annotations.push(mod.annotations);
+	}
+	var maxDepth = 4;
+	for(var i=1;i<maxDepth && i < __stack.length;i++){
+		var p = path.normalize(__stack[i].getFileName()) + "/" + 
+					__stack[i].getFunctionName();
+		if(sh.annotations[p]){
+			annotations.push(sh.annotations[p]);
+		}
+	}
+
+	for(var i=0;i<annotations.length;i++){
+		var sql = annotations[i].sql;
+		var keys = Object.keys(sql);
+		for(var i=0;i<keys.length;i++){
+			var sqlName = keys[i];
+			var sqlString = sql[sqlName];
+			if(sqlName != "query" && sqlName != "genericQuery"){
+				db[sqlName] = queryFunction.bind(db, sqlString);
+			}else{
+				db.processError("Cannot use built in names query/genericQuery for query names");
+			}
+		}
+	}
+	return db;
 };
+
+function queryFunction(sqlString, maybeFn){
+	var db = this;
+	var params = Array.prototype.slice.call(arguments);				
+	if(utils.isFunction(maybeFn)){
+		var genFn = function(){
+			var queryParams = maybeFn();
+			return [sqlString, queryParams];
+		};
+		params = [genFn];
+	}
+	var queryFn = db.query || db.genericQuery;
+	return queryFn.apply(db, params);
+}

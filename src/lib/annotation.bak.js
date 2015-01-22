@@ -8,7 +8,6 @@
  You must not remove this notice, or any other, from this software.
  */
 var fs = require("fs");
-var path = require("path");
 var liner = lib_require("liner");
 
 exports.parseAnnotations = function(serverCtx, pathInfo, callback){
@@ -25,12 +24,12 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	var charCode9 = "9".charCodeAt(0);
 	var annotations = {
 	};
-	var annCurrent = {sql:{}};
+	var annCurrent = {};
 	
-	var idChar = function(c, extraSym){
+	var idChar = function(c){
 		n = c.toLowerCase().charCodeAt(0);
-		return c == "_" || c == "-" ||  (n >= charCodeA && n <= charCodeZ) 
-						||	(n >= charCode0 && n <= charCode9) || c == extraSym;
+		return c == "_" || c == "-" ||  (n >= charCodeA && n <= charCodeZ) ||
+													(n >= charCode0 && n <= charCode9);
 	}
 	var linerObj = liner();
 	var src = fs.createReadStream(pathInfo.path);
@@ -38,8 +37,8 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	
 	var processLine = 
 	function(line) {
-		line = " " + line.trim();//we need to collapse to at least a single whitespace
-		if(line == " "){
+		line = line.trim();
+		if(line == ""){
 			return;
 		}		
 		var prevChar = "";
@@ -47,36 +46,20 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 		var lineLength = line.length;
 		
 		var k = 0;
-		var exportsPrefix = " exports.";
-		var functionPrefix = " function";
 		if(!inComment){
-			if(stringState == NONE && 
-			  (line.startsWith(exportsPrefix) || line.startsWith(functionPrefix)) ){
-				var id = "";			  
-				if(line.startsWith(exportsPrefix)){
-					for(k=exportsPrefix.length;k<lineLength;k++){
-						if(idChar(line[k])){
-							id += line[k];
-						}else{
-							break;
-						}
+			if(stringState == NONE && line.startsWith("exports.")){
+				var id = "";
+				for(k="exports.".length;k<lineLength;k++){
+					if(idChar(line[k])){
+						id += line[k];
+					}else{
+						break;
 					}
-					annotations[id] = annCurrent;
-				}else
-				{
-					for(k=functionPrefix.length+1;k<lineLength;k++){
-						if(idChar(line[k])){
-							id += line[k];
-						}else{
-							break;
-						}						
-					}
-					var fnPath = path.normalize(pathInfo.path) + "/" + id;
-					sh.annotations[fnPath] = annCurrent;
 				}
-				annCurrent = {sql:{}};
+				annotations[id] = annCurrent;
+				annCurrent = {};				
 			}else{
-				annCurrent = {sql:{}};
+				annCurrent = {};
 			}
 		}
 		
@@ -138,7 +121,7 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 						charProcessed = true;
 						skipChars = 1;
 						inComment = true;
-						annCurrent = {sql:{}};
+						annCurrent = {};
 						var nextNextChar = (i+2) < lineLength ? line[i+2] : "";
 						if(nextNextChar == '*'){
 							skipChars++;
@@ -148,7 +131,7 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 				}
 			}
 			if(annState == READING_KEY && !charProcessed){				
-				if(	idChar(line[i], ".")){
+				if(	idChar(line[i])){
 					annKey += line[i];
 				}else{
 					annState = READING_VALUE;
@@ -165,23 +148,16 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 			}
 				
 			if(annReady){
-				if(annValue.trim() == ""){
+				if(annValue == ""){
 					annValue = "true";
 				}
 				try{
 					annValue = annValue.trim();
-					var sqlPrefix = "sql.";
-					if(annKey.startsWith(sqlPrefix)){
-						var sqlName = annKey.substring(sqlPrefix.length);
-						var v = annValue.replace(/\s+/g, ' ');
-						annCurrent.sql[sqlName] = v;
-					}else{
-						eval("var v = " + annValue);
-						annCurrent[annKey] = v;
-					}
+					eval("var v = " + annValue);
+					annCurrent[annKey] = v;
 				}catch(err){
 					console.log("ERR: Syntax error in the annotation value for @" 
-								+ annKey + ": " + err + " in the file " + pathInfo.path + " Value: " + annValue);
+								+ annKey + ": " + err + " in the file " + pathInfo.path);
 					serverCtx.appCtx.hasErrors = true;
 				}
 				annKey = ""; 
