@@ -31,10 +31,31 @@ exports.addAll = function(appCtx, done){
 
 	var barrier = utils.countingBarrier(authMods.length, done);
 	
+	addLogout(appCtx);
+	
 	for(var i=0;i < authMods.length; i++){
 		addAuthMod(appCtx, authMods[i], barrier);
 	}
 	
+}
+
+function addLogout(appCtx){
+	var logoutFn = 
+		function(req, res){
+			req.logout();
+			res.redirect(appCtx.config.auth.logout.redirect);
+		};
+	var route = {
+		annotations: {
+			path : appCtx.config.auth.logout.path,
+			method: "all"
+		},
+		fn: logoutFn,
+		fnName: "logout()",
+		relPath: "_internal",
+		type: "auth"
+	};
+	appCtx.routes.push(route);	
 }
 
 var passportModules = {
@@ -244,9 +265,14 @@ function authRoute(authType, appCtx, authMod){
 
 	var route = 
 		function(req, res, next) {
+
 		  passport.authenticate(authType, function(err, user, info) {
-				if (err) { return next(err); }
+				if (err) { 
+					sh.error("Authentication error. Err:", err);
+					return next(err); 
+				}
 				if (!user) { 
+					sh.error("Authentication error. Message: " +  info && info.message);
 					return res.redirect(failureRedirect); 
 				}
 				req.logIn(user, function(err) {

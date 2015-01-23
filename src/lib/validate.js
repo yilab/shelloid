@@ -101,10 +101,10 @@ function getContentType(ifc){
 			if(shortContentTypes[contentType]){
 				contentType = shortContentTypes[contentType];
 			}			
-		}else
+		}/*else
 		if(utils.isObject(ifc.body)){
 			contentType = "application/json";
-		}
+		}*/
 		return contentType;
 	}else{
 		return false;

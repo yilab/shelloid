@@ -22,6 +22,9 @@ exports.installGlobals = function(){
 	String.prototype.startsWith = function (str){
 		return this.indexOf(str) == 0;
 	};
+	Array.prototype.contains = function(obj){
+		return this.indexOf(obj) >= 0;
+	}
 	global.shelloid = {};
 	global.sh = shelloid;
 	shelloid.getDBConfig = function(dbname){
@@ -190,6 +193,7 @@ exports.serverCtx = function(pathParam, envName){
 				port: 8080,
 				baseUrl: null, //computed dynamically
 				log:{
+					accessLogs: true,
 					file : "shelloid.log", //relative to data dir
 					level: "verbose"
 				},
@@ -218,6 +222,10 @@ exports.serverCtx = function(pathParam, envName){
 					}
 				},
 				auth:{
+					logout: {
+						path: "/logout",
+						redirect: "/"
+					},
 					prefix: "/auth",
 					successRedirect: "/home",
 					failureRedirect: "/",

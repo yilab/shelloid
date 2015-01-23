@@ -21,7 +21,7 @@ exports.init = function(serverCtx, done){
 			continue;
 		}
 		var type = databases[k].type;
-		if(!types.indexOf(type) >= 0){
+		if(!databases[k].ignore && !types.contains(type)){
 			if(databaseSupport[type]){
 				types.push(type);
 			}else{

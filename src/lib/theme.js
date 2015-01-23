@@ -11,11 +11,19 @@ var url = require("url");
 var path = require("path");
 var utils = lib_require("utils");
 var fs = require("fs");
+var moment = require("moment");
+
 module.exports = function(req, res, next){
 	var reqPath = url.parse(req.url).pathname;
 	var themedPublic = sh.appCtx.config.dirs.themedPublic;
 	var themePath = path.join(themedPublic, reqPath);
 	var ext = path.extname(reqPath);
+	req.times = {start: moment()};
+	//log the request 
+	if(sh.appCtx.config.log.accessLogs){
+		sh.info(req.times.start.format() + ":" + req.method + ":" + req.url);
+	}
+	
 	if(utils.dirExists(themePath)){
 		
 		themePath = path.join(themePath, "index.html");

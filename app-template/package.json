@@ -1,0 +1,10 @@
+{
+    "name": "appName",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "passport-local": "*",
+        "passport-google-oauth": "*",
+        "ejs": "*"
+    }
+}

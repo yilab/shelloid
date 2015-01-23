@@ -136,6 +136,10 @@ function routeWrapper(route, appCtx){
 				var dirs = appCtx.config.dirs;
 				if(dirs.themedViews !== ""){
 					var viewFile = path.join(dirs.themedViews, view);
+					var ext = path.extname(viewFile);
+					if(ext == ""){
+						viewFile = viewFile + "." + appCtx.config.viewEngine;
+					}
 					if(utils.fileExists(viewFile)){
 						view = "themes/" + appCtx.config.theme + "/" + view;
 					}

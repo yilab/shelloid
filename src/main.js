@@ -38,6 +38,14 @@ if(process.argv.length <= 2){
 }
 
 var args = process.argv.slice(2);
+
+if(args[1] == "init"){
+	var appInit = lib_require("appinit");
+	args.unshift(path.resolve(__dirname, ".."));
+	appInit.apply(null, args);
+	return;
+}
+
 var serverCtx = init.serverCtx.apply(null, args);
 
 shelloid.serverCtx = serverCtx;
