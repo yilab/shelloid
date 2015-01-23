@@ -16,7 +16,9 @@ In order to improve programmer productivity and make your code readable, maintai
 Getting started
 =================
 
-Install: npm install -g shelloid
+Install: npm install -g shelloid 
+
+Installation requires super user/admin privilege. Use "sudo" in Linux/unix and "Run as administrator" in Windows.
 
 Initialize an app: shelloid test-app init
 
