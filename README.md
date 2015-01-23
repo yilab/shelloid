@@ -3,7 +3,25 @@ Shelloid
 
 The Node.js Web Application Server that simplifies the development of secure & dependable web applications/services.
 
-Features built-in simulator for controlled functional testing of application/controller logic.
+In order to improve programmer productivity and make your code readable, maintainable, and secure, Shelloid employs the following foundational principles:
+
+* Convention over configuration.
+
+* Declarative over procedural.
+
+* Separation of concerns.
+
+* Secure defaults.
+
+Getting started
+=================
+
+Install: npm install -g shelloid
+
+Initialize an app: shelloid test-app init
+
+To run: shelloid test-app
+
 
 Key features (at the moment):
 
