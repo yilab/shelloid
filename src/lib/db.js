@@ -26,10 +26,15 @@ function EasyDb(config, parentDomain) {
 }
 
 function installQueryHandlers(easyDb){
-	var ops = easyDb.config.support.ops;
+	var syncOps = easyDb.config.support.syncOps || [];
+	
+	var ops = easyDb.config.support.ops.concat(syncOps);
+	
+	easyDb.syncOps = syncOps;
+	
 	for(var i=0;i<ops.length; i++){
 		var currOp = ops[i];
-		(function(op){
+		(function(op, isSyncOp){
 			easyDb[op] = function(queryParam){
 				if (easyDb.successH.length < easyDb.queries.length){
 					easyDb.successH.push(null);			
@@ -39,14 +44,16 @@ function installQueryHandlers(easyDb){
 					 if(!easyDb.firstQuery){
 						easyDb.throwError(sh.caller("Expecting a query generator function."));
 					}
-					easyDb.firstQuery = false;
+					if(!isSyncOp){
+						easyDb.firstQuery = false;
+					}
 					param = Array.prototype.slice.call(arguments);
 				}
 				easyDb.queries.push({param: param, name: op});
 				easyDb.lastCallWasQuery = true;
 				return easyDb;
 			}
-		})(currOp);
+		})(currOp, syncOps.contains(currOp));
 	}
 }
 
@@ -137,17 +144,36 @@ function _execute_queries(easyDb) {
 
     var queryInfo = easyDb.queries.shift();
 	var queryParam = queryInfo.param;
+
 	if(utils.isFunction(queryParam)){
 		queryParam = queryParam();//generate the query
 	}
 	
+	var fnName = queryInfo.name;
+	
+	if(easyDb.syncOps.contains(fnName)){
+		var proxyFn = easyDb.proxy[fnName];
+		if(proxyFn){
+			var res = proxyFn.apply(easyDb.proxy, queryParam);
+			var successH = easyDb.successH.shift();
+			if(successH){
+				successH(res);
+			}
+			_execute_queries(easyDb);
+		}else{
+			easyDb.processError("Synchronous DB operation: " + fnName + " not implemented.");
+		}
+		return;
+	}
+	
+	
 	var callback = 
-        function (err) {			
+        function (err) {	
             if (err) {
                 sh.error("Query failed: " + JSON.stringify(queryParam) + " error: " + err);
                 _rollback_txn(easyDb);
 				easyDb.processError(err);				
-            } else {
+            } else {			
                 var successF = easyDb.successH.shift();
                 if (successF) {
                     successF.apply(null, Array.prototype.slice.call(arguments, 1));
@@ -155,7 +181,7 @@ function _execute_queries(easyDb) {
                 _execute_queries(easyDb);
             }
         };
-	var fnName = queryInfo.name;
+
 	if(easyDb.proxy[fnName]){
 		queryParam.push(callback);
 		easyDb.proxy[fnName].apply(easyDb.proxy, queryParam);

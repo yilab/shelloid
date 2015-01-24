@@ -10,9 +10,12 @@
 
 var app_pkg = lib_require("app_pkg"),
 	utils = lib_require("utils");
+var fs = require("fs");
+var path = require("path");
 
 exports.init = function(serverCtx, done){
 	shelloid.db = lib_require("db");
+	var databaseSupport = loadDBProxies(serverCtx);
 	shelloid.serverCtx.databaseSupport = databaseSupport;
 	var types = [];
 	var databases = serverCtx.appCtx.config.databases;
@@ -25,7 +28,7 @@ exports.init = function(serverCtx, done){
 			if(databaseSupport[type]){
 				types.push(type);
 			}else{
-				shelloid.log("Does not support database type: " + type + " specified in the config");
+				shelloid.error("Does not support database type: " + type + " specified in the config");
 				serverCtx.appCtx.hasErrors = true;
 			}
 		}
@@ -37,7 +40,7 @@ exports.init = function(serverCtx, done){
 	
 	var dbModulesLoaded = function(){
 		for(var k in  databases){
-			if(!databases.hasOwnProperty(k)){
+			if(!databases.hasOwnProperty(k) || databases[k].ignore){
 				continue;
 			}
 			var config = databases[k];
@@ -56,8 +59,6 @@ exports.init = function(serverCtx, done){
 			app_pkg.require(supportThis.modName, supportThis.modVersion,
 				function(mod){
 					supportThis.mod = mod;
-					supportThis.modProxy = lib_require("db/"+supportType + "-proxy");
-					supportThis.modProxy.init(supportThis);
 					sh.info("Database module type " + supportType + " loaded.");
 					barrier.countDown();
 				}
@@ -66,22 +67,17 @@ exports.init = function(serverCtx, done){
 	}
 }
 
-var databaseSupport = {
-	"mysql" : {
-		modName: "mysql",
-		modVersion: "*",
-		mod: null,//loaded dynamically
-		modProxy: null,
-		ops: ["query"]
-	},
-	"redis" : {
-		modName: "redis",
-		modVersion: "0.12.1",
-		mod: null,//loaded dynamically
-		modProxy: null,
-		ops: ["setex", "select", "del", "keys", "set", "hset", "hkeys"]
+function loadDBProxies(serverCtx){
+	var supports = [];
+	var dbPath = path.join(__dirname, "db");
+	var files = fs.readdirSync(dbPath);
+	for(var i=0;i<files.length;i++){
+		if(files[i].endsWith("-proxy.js")){
+			var modProxy = lib_require("db/" + files[i]);
+			modProxy.support.modProxy = modProxy;//self reference.
+			supports[modProxy.support.type] = modProxy.support;
+		}
 	}
-	
-};
-
+	return supports;
+}
 

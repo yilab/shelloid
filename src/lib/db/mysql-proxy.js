@@ -9,11 +9,16 @@
  */
 
 var proxyBase = lib_require("db/proxy-base");
-var support;
 
-exports.init = function(supportThis){
-	support = supportThis;
-}
+var support = {
+	type: "mysql",
+	modName: "mysql",
+	modVersion: "*",
+	mod: null,//loaded dynamically
+	ops: ["query"]
+};
+
+exports.support = support;
 
 exports.createProxy = function(client){
 	return new MysqlProxy(client);
@@ -33,8 +38,12 @@ exports.createPool = function(config){
 				timezone: config.timezone
 			}
 		);
-		c.connect();
-		callback(null, c);
+		c.connect(function(err) {
+			if (err) {
+				sh.error('Error connecting to mysql instance: ' + err.stack);
+			}
+			callback(err, c);
+		});
 	};
 
 	var destroyFn = function (client) {
@@ -43,8 +52,6 @@ exports.createPool = function(config){
 	
 	return proxyBase.createPool(config, createFn, destroyFn);
 }
-
-exports.ops = ["startTransaction", "commit", "rollback", "query"];
 
 function MysqlProxy(client){
 	proxyBase.ProxyBase.call(this, client);

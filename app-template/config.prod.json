@@ -16,6 +16,7 @@
 		}
 	},
 	"session":{
+		"note": "Set up redis and set store to 'cache' to enable sessions.",
 		"store" : false,
 		"secret": "key1234",
 		"options":{
