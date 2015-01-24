@@ -57,7 +57,7 @@ exports.loadAppConfig = function(appCtx){
 		var config = appCtx.config = utils.merge(appCtx.config, config);
 		assert(config.dirs.data !== undefined);
 		config.dirs._data = config.dirs.data;//save for later reference
-		config.dirs.data = path.resolve(appCtx.basePath, config.dirs.data);
+		config.dirs.data = path.normalize(path.resolve(appCtx.basePath, config.dirs.data));
 		utils.mkdirIfNotExists(config.dirs.data, 
 								"Data directory: " + config.dirs._data + 
 								"(" + config.dirs.data+ ") does not exist. Trying to create one.");								
@@ -132,7 +132,7 @@ exports.serverCtx = function(pathParam, envName){
 	
 	var appBasePath = checkAppBasePath(pathParam);
 
-	var packageJsonPath = path.normalize(path.join(__dirname,  "/../package.json"));
+	var packageJsonPath = path.normalize(path.join(__dirname,  "../package.json"));
 	var packageJson = utils.readJsonFile(packageJsonPath, "Shelloid package.json");
 	
 	if(utils.isString(packageJson)){
@@ -150,7 +150,7 @@ exports.serverCtx = function(pathParam, envName){
 	{
 		packageJsonPath : packageJsonPath,
 		packageJson: packageJson,
-		basePath: path.normalize(path.join(__dirname, "/..")),
+		basePath: path.normalize(path.join(__dirname, "..")),
 		pools:{
 		},
 		appCtx :{			
@@ -175,6 +175,11 @@ exports.serverCtx = function(pathParam, envName){
 			config: {
 				theme: null,
 				viewEngine : "ejs",
+				autoRestart:{
+					thresholdMillis: 3000,
+					appUpdate: true,
+					serverUpdate: true
+				},
 				dirs : {
 					routes: "src/routes", 
 					auth: "src/auth",
@@ -275,7 +280,7 @@ exports.appInit = function(done){
 
 
 function checkAppBasePath(pathParam){
-	var basePath = path.resolve(pathParam);
+	var basePath = path.normalize(path.resolve(pathParam));
 	if(!utils.dirExists(basePath)){
 		console.log("The provided path: " + pathParam + 
 					" (resolves to " + basePath + ") is not a directory");

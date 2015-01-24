@@ -14,7 +14,8 @@ global.lib_require = require("./lib/lib_require.js");
 var path = require("path"),
 	cluster = require("cluster"),
 	os = require("os");
-	winston = require('winston');
+	winston = require('winston'),
+	child_process = require("child_process");
 
 /*require/init order is important*/
 var	init = require("./init.js");
@@ -30,7 +31,8 @@ var loader = lib_require("loader"),
 	auth = lib_require("auth"),
 	app_pkg = lib_require("app_pkg"),
 	validate_globals = lib_require("validate_globals"),
-	dbconfig = lib_require("dbconfig");
+	dbconfig = lib_require("dbconfig"),
+	autorestart = lib_require("autorestart");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
@@ -46,42 +48,104 @@ if(args[1] == "init"){
 	return;
 }
 
-var serverCtx = init.serverCtx.apply(null, args);
+var envName = args[1];
+if(envName && envName.startsWith("-")){
+	envName = null;
+}
+var serverCtx = init.serverCtx(args[0], envName);
+serverCtx.startTime = new Date();
+serverCtx.startTimeMillis = serverCtx.startTime.valueOf();
 
 shelloid.serverCtx = serverCtx;
 shelloid.appCtx = serverCtx.appCtx;
-
+shelloid.serverCtx.args = args;
 init.loadAppConfig(serverCtx.appCtx);
 
-var numCPUs = os.cpus().length;
-
-if(cluster.isMaster){
-	winston.add(winston.transports.File, { filename: serverCtx.appCtx.config.log.file});
-	winston.transports.Console.level = serverCtx.appCtx.config.log.level;
-	winston.transports.File.level = serverCtx.appCtx.config.log.level;	
-}
-
-if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {
-	if(serverCtx.appCtx.env == "sim"){
-		sh.error("Cannot enable cluster in simulator mode. Please set config.enableCluster to false");
+var lastRestart = new Date().valueOf();
+var isMon = args[1] !== "--nomon" && args[2] !== "--nomon";
+var doRestart = true;
+function onChildExit(){
+	if(!doRestart){
+		console.log("Exiting server");
 		process.exit(0);
 	}
-	console.log("Enabling Cluster: Starting workers");
-	cluster.setupMaster({ silent: false });
-	// Fork workers.
-	for (var i = 0; i < numCPUs; i++) {
-		cluster.fork();
-	}
-	cluster.on('exit', function(worker, code, signal) {
-		console.log('Worker: ' + worker.process.pid + ' died. Exit code: ' + code);
-	});
-	    
-	for(var k in cluster.workers){
-		var worker = cluster.workers[k];
-		worker.on("message", processWorkerMsg);
-	}
+	init.loadAppConfig(serverCtx.appCtx);//reload app config
+	var currTime = new Date().valueOf();
+	var delta = currTime - lastRestart;
+	delta = serverCtx.appCtx.config.autoRestart.thresholdMillis - delta;
+	delta = delta < 0 ? 10 : delta;
+	setTimeout(function(){
+		console.log("Restarting server.");
+		var child = child_process.fork(process.argv[1], args, {cwd: process.cwd(), silent:false});
+		child.on("exit", onChildExit);
+	}, delta);
+}
+
+if(isMon){
+	console.log("Setting up the monitor process");
+	args.push("--nomon");
+	isMon = true;	
+	var child = child_process.fork(process.argv[1], args, 
+		{cwd: process.cwd(), silent:false});
+	child.on("exit", onChildExit);	
+	var shutdownMon = function(){
+		console.log("Shutting down monitor");
+		doRestart = false;
+	}	
+	process.on ('SIGTERM', shutdownMon);
+	process.on ('SIGINT', shutdownMon);
+	process.on ('SIGHUP', shutdownMon);
 }else{
-	app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
+	var numCPUs = os.cpus().length;
+
+	if(cluster.isMaster){
+		winston.add(winston.transports.File, { filename: serverCtx.appCtx.config.log.file});
+		winston.transports.Console.level = serverCtx.appCtx.config.log.level;
+		winston.transports.File.level = serverCtx.appCtx.config.log.level;	
+	}
+		
+	if (cluster.isMaster && serverCtx.appCtx.config.enableCluster) {	
+		if(serverCtx.appCtx.env == "sim"){
+			sh.error("Cannot enable cluster in simulator mode. Please set config.enableCluster to false");
+			process.exit(0);
+		}
+		
+		var shutdownWait = function(){
+			sh.info("Cluster master is waiting for children to exit");
+		}
+		process.on ('SIGTERM', shutdownWait);
+		process.on ('SIGINT', shutdownWait);
+		process.on ('SIGHUP', shutdownWait);
+		
+		console.log("Enabling Cluster: Starting workers");
+		cluster.setupMaster({ silent: false });
+		// Fork workers.
+		for (var i = 0; i < numCPUs; i++) {
+			cluster.fork();
+		}
+		cluster.on('exit', function(worker, code, signal) {
+			console.log('Worker: ' + worker.process.pid + ' died. Exit code: ' + code);
+			var keys = Object.keys(cluster.workers);
+			if(keys.length == 0){
+				process.exit(0);//shutdown the master.
+			}			
+		});
+			
+		for(var k in cluster.workers){
+			var worker = cluster.workers[k];
+			worker.on("message", processWorkerMsg);
+		}
+	}else{
+		process.on ('SIGTERM', autorestart.gracefulShutdown);
+		process.on ('SIGINT', autorestart.gracefulShutdown);
+		process.on ('SIGHUP', autorestart.gracefulShutdown);
+
+		app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
+	}
+
+	if(cluster.isMaster){
+		autorestart.init(serverCtx);	
+	}	
 }
 
 function processWorkerMsg(msg){
@@ -162,11 +226,12 @@ function routesLoaded(){
 		engine = require("http");
 	}
 	var server = engine.createServer(serverCtx.appCtx.app, options);
+	serverCtx.server = server;
 	server.listen(serverCtx.appCtx.config.port, function(){
-	  shelloid.info('Shelloid server version: ' + serverCtx.packageJson.version + ' listening on ' + 
-		serverCtx.appCtx.config.port);
+		shelloid.info('Shelloid server version: ' + 
+					  serverCtx.packageJson.version + 
+					' listening on ' + 	serverCtx.appCtx.config.port);
 	});
-		
 }
 
 function httpsOptions(c){
