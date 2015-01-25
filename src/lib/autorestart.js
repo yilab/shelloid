@@ -11,7 +11,6 @@ var chokidar = require('chokidar');
 var cluster = require('cluster');
 var child_process = require('child_process');
 
-var autoRestart = false;
 var watcher;
 
 exports.init = function (serverCtx){
@@ -57,8 +56,8 @@ function watchNotification(event, path, stats){
 	}
 	sh.info("Shelloid has detected the event: " + event + " in the path : " + 
 			path + ". Initiating restart.");
+	sh.serverCtx.isRestarting = true;
 	watcher.close();
-	autoRestart = true;
 
 	var hasWorkers = false;
 	for(var k in cluster.workers){
@@ -82,7 +81,7 @@ function gracefulShutdown(){
 		setTimeout(function() {
 		   sh.error("Could not close pending connections - forcing shutdown.");
 		   process.exit(0);
-		}, 10*1000);
+		}, sh.appCtx.config.shutdownWaitMillis);
 	}
 }
 

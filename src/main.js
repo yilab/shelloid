@@ -125,9 +125,14 @@ if(isMon){
 		}
 		cluster.on('exit', function(worker, code, signal) {
 			console.log('Worker: ' + worker.process.pid + ' died. Exit code: ' + code);
-			var keys = Object.keys(cluster.workers);
-			if(keys.length == 0){
-				process.exit(0);//shutdown the master.
+			if(sh.serverCtx.isRestarting){
+				var keys = Object.keys(cluster.workers);
+				if(keys.length == 0){
+					process.exit(0);//shutdown the master.
+				}
+			}else{
+				sh.info("Starting a new worker process to replace the died one.");
+				cluster.fork();//respawn the cluster child.
 			}			
 		});
 			

@@ -180,6 +180,7 @@ exports.serverCtx = function(pathParam, envName){
 					appUpdate: true,
 					serverUpdate: true
 				},
+				shutdownWaitMillis: 10*1000,
 				dirs : {
 					routes: "src/routes", 
 					auth: "src/auth",
