@@ -57,7 +57,7 @@ exports.loadAppConfig = function(appCtx){
 		var config = appCtx.config = utils.merge(appCtx.config, config);
 		assert(config.dirs.data !== undefined);
 		config.dirs._data = config.dirs.data;//save for later reference
-		config.dirs.data = path.normalize(path.resolve(appCtx.basePath, config.dirs.data));
+		config.dirs.data = path.normalize(path.resolve(appCtx.basePath, config.dirs.data));		
 		utils.mkdirIfNotExists(config.dirs.data, 
 								"Data directory: " + config.dirs._data + 
 								"(" + config.dirs.data+ ") does not exist. Trying to create one.");								
@@ -79,6 +79,9 @@ exports.loadAppConfig = function(appCtx){
 		var dateFormatInt = {"string": 0, "date": 1, "moment": 2};
 		config.validate.req.dateFormatInt = dateFormatInt[config.validate.req.dateFormat];
 		config.validate.res.dateFormatInt = dateFormatInt[config.validate.res.dateFormat];		
+
+		config.dirs._ext = config.dirs.ext;
+		config.dirs.ext  = path.resolve(appCtx.basePath, config.dirs.ext);		
 
 		config.dirs._views = config.dirs.views;
 		config.dirs.views = path.resolve(appCtx.basePath, appCtx.config.dirs.views);
@@ -191,7 +194,8 @@ exports.serverCtx = function(pathParam, envName){
 					data: "data",
 					uploads: "uploads",
 					init: "src/init.js",
-					sim: "src/sim"
+					sim: "src/sim",
+					ext: "src/ext"
 				},			
 				enableCluster: false,
 				domain: "localhost",

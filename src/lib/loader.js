@@ -43,13 +43,13 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 		return;		
 	}	
 	var modPathLength = modPath.length;
-	var files = utils.recurseDirSync(modPath);
-	var barrier = utils.countingBarrier(files.length, done);
+	var paths = utils.recurseDirSync(modPath);
+	var barrier = utils.countingBarrier(paths.length, done);
 	
-	for(var i=0;i<files.length;i++){
-		if(files[i].path.endsWith(".js")){
-			console.log("Processing: " + files[i].path + " (" + modType + ")" );
-			annotation.parseAnnotations(serverCtx, files[i],  
+	for(var i=0;i<paths.length;i++){
+		if(paths[i].path.endsWith(".js")){
+			console.log("Processing: " + paths[i].path + " (" + modType + ")" );
+			annotation.parseAnnotations(serverCtx, paths[i],  
 				function(pathInfo, annotations){
 					if(!annotations){
 						annotations = {};

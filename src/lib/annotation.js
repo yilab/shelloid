@@ -165,20 +165,26 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 			}
 				
 			if(annReady){
-				if(annValue.trim() == ""){
-					annValue = "true";
-				}
+				annValue = annValue.trim();
 				try{
-					annValue = annValue.trim();
+					if(sh.ext.annotationProcessors[annKey]){
+						sh.ext.annotationProcessors[annKey].process(
+												annCurrent, annKey, annValue);
+					}else{
+						if(annValue == ""){
+							annValue = "true";
+						}
+						eval("var v = " + annValue);
+						annCurrent[annKey] = v;							
+					}
+					//TODO MOVE THIS TO EXT:
 					var sqlPrefix = "sql.";
 					if(annKey.startsWith(sqlPrefix)){
 						var sqlName = annKey.substring(sqlPrefix.length);
 						var v = annValue.replace(/\s+/g, ' ');
 						annCurrent.sql[sqlName] = v;
-					}else{
-						eval("var v = " + annValue);
-						annCurrent[annKey] = v;
 					}
+					
 				}catch(err){
 					console.log("ERR: Syntax error in the annotation value for @" 
 								+ annKey + ": " + err + " in the file " + pathInfo.path + " Value: " + annValue);

@@ -23,7 +23,7 @@ var	init = require("./init.js");
 init.installGlobals();
 
 var log = lib_require("log");
-
+var extMgr = lib_require("extmgr");
 var loader = lib_require("loader"),
 	utils = lib_require("utils"),
 	route = lib_require("route"),
@@ -64,6 +64,7 @@ init.loadAppConfig(serverCtx.appCtx);
 var lastRestart = new Date().valueOf();
 var isMon = args[1] !== "--nomon" && args[2] !== "--nomon";
 var doRestart = true;
+
 function onChildExit(){
 	if(!doRestart){
 		console.log("Exiting server");
@@ -81,10 +82,9 @@ function onChildExit(){
 	}, delta);
 }
 
-if(isMon){
+function startMon(){
 	console.log("Setting up the monitor process");
 	args.push("--nomon");
-	isMon = true;	
 	var child = child_process.fork(process.argv[1], args, 
 		{cwd: process.cwd(), silent:false});
 	child.on("exit", onChildExit);	
@@ -95,7 +95,15 @@ if(isMon){
 	process.on ('SIGTERM', shutdownMon);
 	process.on ('SIGINT', shutdownMon);
 	process.on ('SIGHUP', shutdownMon);
-}else{
+}
+
+if(isMon){
+	startMon();
+else{
+	startServer();
+}
+
+function startServer(){
 	var numCPUs = os.cpus().length;
 
 	if(cluster.isMaster){
@@ -167,9 +175,13 @@ function app_pkg_initDone(err){
 		process.exit(0);
 	}else{
 		sh.info("Application package manager initialization done.");	
-		serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
-		dbInit();
+		extMgr.loadExtensions(serverCtx.appCtx, createAppInstance);
 	}
+}
+
+function createAppInstance(){
+	serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
+	dbInit();
 }
 
 function dbInit(){
