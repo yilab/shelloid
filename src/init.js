@@ -156,7 +156,17 @@ exports.serverCtx = function(pathParam, envName){
 		},
 		appCtx :{			
 			env: envName,
-			hasErrors: false,
+			hasErrors: function(flag){
+				if(flag !== undefined){
+					if(flag){
+						console.log("Application has errors. Called by:" + 
+										sh.caller());				
+					}
+					this.flagErrors = flag;
+				};
+				return this.flagErrors;
+			},
+			flagErrors: false,
 			basePath: appBasePath,
 			packageJsonPath: appPackageJsonPath,
 			packageJson: appPackageJson,

@@ -17,7 +17,7 @@ exports.addAll = function(appCtx){
 	for(i=0;i < routes.length; i++){
 		var ok = addRoute(appCtx, routes[i]);
 		if(!ok){
-			appCtx.hasErrors = true;
+			appCtx.hasErrors(true);
 		}
 	}
 	return i;
@@ -34,6 +34,7 @@ function addRoute(appCtx, route){
 	}
 	
 	if(!utils.isFunction(route.fn)){
+		sh.error("route.fn is not a function for: " + route.url);
 		return false;
 	}
 	
@@ -69,7 +70,7 @@ function addRoute(appCtx, route){
 		}else{
 			sh.error("Cannot mount (unknown method): " + route.relPath + 
 						" (" + route.fnName + ") at " + urlPath + " (" + method[i] + "). ");
-			appCtx.hasErrors = true;
+			appCtx.hasErrors(true);
 		}					
 	}
 	
@@ -81,91 +82,110 @@ function routeWrapper(route, appCtx){
 		req.route = route;
 		req.sh = {flags:{}, errors:[]};
 		res.sh = {};
-	
-		var postrouteDone = function(proceed){
-			if(!proceed){
-				sh.error("Postroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
-				logErrors(req);
-				return;
-			}
-
-			if(res.sh.pendingOp.op == "json"){
-				res.json_.apply(res, res.sh.pendingOp.params);
-			}else
-			if(res.sh.pendingOp.op == "render"){
-				res.render_.apply(res, res.sh.pendingOp.params);
-			}else{
-				throw new Error("Unknown operation in postrouteDone(): " + res.sh.pendingOp);
-			}				
+		try{
+			routeHandler(req, res);
+		}catch(err){
+			sh.error("Error processing request for: " + req.url);
+			console.log(err.stack);
+			res.status(500).end("Internal Server Error");
 		}
-		var invokeRoute = function(){
-			res.json_ = res.json;
-			res.render_ = res.render;
-			res.json = function(obj){
-				res.sh.pendingOp = {op: "json", params: [obj]};
-				res.sh.obj = obj;
-				invokeHooks("postroute", req, res, postrouteDone);
-				return res;
-			};			
-
-			res.render = function(view, localsOrCallback, callback){
-				var dirs = appCtx.config.dirs;
-				if(dirs.themedViews !== ""){
-					var viewFile = path.join(dirs.themedViews, view);
-					var ext = path.extname(viewFile);
-					if(ext == ""){
-						viewFile = viewFile + "." + appCtx.config.viewEngine;
-					}
-					if(utils.fileExists(viewFile)){
-						view = "themes/" + appCtx.config.theme + "/" + view;
-					}
-				}
-				res.sh.pendingOp = 
-					{op: "render", params: [view, localsOrCallback, callback]};			
-				if(utils.isObject(localsOrCallback)){
-					res.sh.obj = localsOrCallback;
-				}
-				invokeHooks("postroute", req, res, postrouteDone);
-				return res;
-			}
-			req.sh.errors = [];//clear any errors from previous steps.
-			route.fn(req, res, sh.routeCtx);
-		};		
-				
-		var prerouteDone = function(proceed){
-			if(!proceed){
-				sh.error("Preroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
-				logErrors(req);
-				return;
-			}else{
-				invokeRoute();
-			}
-		}		
-		
-		var d = require('domain').create();
-		d.add(req);
-		d.add(res);
-		d.on('error', function(er) {
-			sh.error("Request Processing Error: " + er.msg);
-			res.status(500).end("Internal Server Error.");
-		});
-		req.db = function(name){
-			return sh.db(name, d);
-		}						
-		req.seq = function(name, options){
-			return sh.seq(name, options, d);
-		}												
-		d.run(function(){
-			invokeHooks("preroute", req, res, prerouteDone);			
-		});
-		
 	}
 }
+	
+function routeHandler(req, res){
+	var route = req.route;
+	var appCtx = sh.appCtx;
+	var postrouteDone = function(proceed){
+		if(!proceed){
+			sh.error("Postroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
+			logErrors(req);
+			return;
+		}
+
+		if(res.sh.pendingOp.op == "json"){
+			res.json_.apply(res, res.sh.pendingOp.params);
+		}else
+		if(res.sh.pendingOp.op == "render"){
+			res.render_.apply(res, res.sh.pendingOp.params);
+		}else{
+			throw new Error("Unknown operation in postrouteDone(): " + res.sh.pendingOp);
+		}				
+	}
+	var invokeRoute = function(){
+		res.json_ = res.json;
+		res.render_ = res.render;
+		res.json = function(obj){
+			res.sh.pendingOp = {op: "json", params: [obj]};
+			res.sh.obj = obj;
+			invokeHooks("postroute", req, res, postrouteDone);
+			return res;
+		};			
+
+		res.render = function(view, localsOrCallback, callback){
+			var dirs = appCtx.config.dirs;
+			if(dirs.themedViews !== ""){
+				var viewFile = path.join(dirs.themedViews, view);
+				var ext = path.extname(viewFile);
+				if(ext == ""){
+					viewFile = viewFile + "." + appCtx.config.viewEngine;
+				}
+				if(utils.fileExists(viewFile)){
+					view = "themes/" + appCtx.config.theme + "/" + view;
+				}
+			}
+			res.sh.pendingOp = 
+				{op: "render", params: [view, localsOrCallback, callback]};			
+			if(utils.isObject(localsOrCallback)){
+				res.sh.obj = localsOrCallback;
+			}
+			invokeHooks("postroute", req, res, postrouteDone);
+			return res;
+		}
+		req.sh.errors = [];//clear any errors from previous steps.
+		route.fn(req, res, sh.routeCtx);
+	};		
+			
+	var prerouteDone = function(proceed){
+		if(!proceed){
+			sh.error("Preroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
+			logErrors(req);
+			return;
+		}else{
+			invokeRoute();
+		}
+	}		
+	
+	var d = require('domain').create();
+	d.add(req);
+	d.add(res);
+	d.add(sh);
+	d.on('error', function(er) {
+		sh.error("Request Processing Error: " + er.stack);
+		res.status(500).end("Internal Server Error.");
+	});
+	req.db = function(name){
+		return sh.db(name, d);
+	}						
+	req.seq = function(name, options){
+		return sh.seq(name, options, d);
+	}												
+	d.run(function(){
+		invokeHooks("preroute", req, res, prerouteDone);			
+	});
+	
+}
+
 
 function invokeHooks(hookType, req, res, done){
-	var globalHooks = sh.ext.hooks[type];
-	var routeHooks = req.route.annotations.$hooks[hookType];
+	var config = sh.appCtx.config;
+	var globalHooks = sh.ext.hooks[hookType];
+	var routeHooks = req.route.annotations.$hooks && 
+					 req.route.annotations.$hooks[hookType];	
 	var r=0,g=0;
+	
+	if(!routeHooks){
+		routeHooks = [];
+	}
 
 	req.setFlag = function(flag, status, msg){
 		req.sh.flags[flag] = true;
@@ -179,15 +199,18 @@ function invokeHooks(hookType, req, res, done){
 	var processNext = function(){
 		if(req.sh.flags["abort"]){
 			res.status(req.sh.flagStatus).end(req.sh.flagMsg);
+			sh.error("Abort flag set for: " + req.url);
 			done(false);
 			return;
 		}
 
 		var terminate = false;
 		var hook=false;
-		while(!hook || terminate){
+		while(!hook && !terminate){	
 			if( (r < routeHooks.length) && 
-				(routeHooks[r].priority <= globalHooks[g].priority) ){
+				( (g >= globalHooks.length) ||
+				  (routeHooks[r].priority <= globalHooks[g].priority) )
+			){
 				hook = routeHooks[r];
 				r++;
 			}else
@@ -214,7 +237,7 @@ function invokeHooks(hookType, req, res, done){
 				}
 			}
 		}
-		
+				
 		if(hook){
 			process.nextTick(hook.handler.bind(null, req, res, processNext));
 		}else{
@@ -225,8 +248,12 @@ function invokeHooks(hookType, req, res, done){
 					break;
 				}
 			}
-			fail ? 	process.nextTick(done.bind(null, false)) : 
-					process.nextTick(done.bind(null, true));
+			if(fail){
+				res.status(401).end("Unauthorized");
+				process.nextTick(done.bind(null, false));
+			}else{
+				process.nextTick(done.bind(null, true));
+			}
 		}
 	}
 	

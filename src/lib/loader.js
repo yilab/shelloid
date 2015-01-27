@@ -14,6 +14,7 @@ var annotation = lib_require("annotation");
 
 exports.loadAll = function(done){
 	var config = sh.appCtx.config;
+	var barrier = utils.countingBarrier(config.appModules.length, done);
 	for(var i=0;i<config.appModules.length;i++){
 		var modName = config.appModules[i];
 		var p = config.dirs[modName];
@@ -30,7 +31,11 @@ exports.loadAll = function(done){
 			}
 		}
 		if(gotHook){
-			var loader = {hook:hook, modType: modName, modPath : p};
+			var loader = {hook:hook, modType: modName, modPath : p, 
+				annotationProcessors:[]};
+			loadModules(loader, barrier.countDown.bind(barrier));
+		}else{
+			barrier.countDown();
 		}
 	}
 }

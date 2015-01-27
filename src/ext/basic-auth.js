@@ -24,25 +24,31 @@ var extInfo =
 };
 
 function processNoAuth(annotations, keyFields, value){
-	annotations.addHook({type: "preroute", handler: noAuth, priority: sh.hookPriorities.auth, invokeIf: null} 
+	annotations.$addHook({type: "preroute", handler: noAuth, priority: sh.hookPriorities.auth, invokeIf: null} 
 	);
 }
 
 function processAuth(annotations, keyFields, value){
-	if(!value){
+	if(value != "api"){
 		return true;
 	}
-	annotations.addHook(
-	{type: "preroute", handler: customAuth, priority: sh.hookPriorities.auth, invokeIf: ["!auth"]} );
+	annotations.auth = value;
+	annotations.$addHook(
+	{type: "preroute", handler: apiAuth, priority: sh.hookPriorities.auth, invokeIf: ["!auth"]} );
 }
 
 function noAuth(req, res, done){
 	req.setFlag("auth");
+	req.setFlag("authr");
 	done();
 }
 
 
 function sessionAuth(req, res, done){
+	if(req.route.type == "auth"){
+		req.setFlag("auth"); 
+		req.setFlag("authr");
+	}else	
 	if(req.user){
 		req.setFlag("auth");
 	}else{
@@ -51,7 +57,7 @@ function sessionAuth(req, res, done){
 	done();
 }
 
-function customAuth(req, res, done){	
+function apiAuth(req, res, done){	
 	var auth = req.route.annotations.auth;	
 	
 	var success = function(){
@@ -60,7 +66,7 @@ function customAuth(req, res, done){
 	}
 	
 	var err = function(msg){
-		req.sh.errors.push("Custom authentication: " + auth + " failure for: " + req.url);
+		req.sh.errors.push("API authentication: " + auth + " failure for: " + req.url);
 		done();
 	}
 	
@@ -69,7 +75,7 @@ function customAuth(req, res, done){
 		if(authMod){
 			authMod.fn(req, success, err);			
 		}else{
-			sh.error("Custom authentication module for: " + auth + " not found");
+			sh.error("API authentication module for @" + auth + " not found");
 		}
 	}
 	

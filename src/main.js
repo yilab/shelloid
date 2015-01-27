@@ -217,7 +217,7 @@ function authModsAdded(){
 }
 
 function addRoutes(){
-
+	console.log("hooks", sh.ext.hooks);
 	if(serverCtx.appCtx.routes.length == 0){
 		console.log("No routes configured! Exiting.");
 		process.exit();
@@ -225,7 +225,7 @@ function addRoutes(){
 
 	route.addAll(serverCtx.appCtx);
 	
-	if(serverCtx.appCtx.hasErrors){
+	if(serverCtx.appCtx.hasErrors()){
 		console.log("Application context has errors. Exiting.");
 		process.exit(0);
 	}

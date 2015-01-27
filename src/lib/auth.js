@@ -69,7 +69,7 @@ function addAuthMod(appCtx, authMod, barrier){
 	if(!authMod.annotations.auth){	
 		console.log("@auth annotation not specified for authentication module: " + 
 				authMod.relPath + " (" + authMod.fnName + ")");
-		appCtx.hasErrors = true;
+		appCtx.hasErrors(true);
 		barrier.countDown();
 		return;
 	}
@@ -84,7 +84,7 @@ function addAuthMod(appCtx, authMod, barrier){
 	
 	if(!utils.isString(authType)){
 		console.log("@auth annotation must be a string: " + authMod.relPath);		
-		appCtx.hasErrors = true;
+		appCtx.hasErrors(true);
 		barrier.countDown();
 		return;
 	}
@@ -113,7 +113,7 @@ function configureLocalAuth(appCtx, authMod){
 	if(!authPath){
 		console.log("Local authentication needs @path specification: " + 
 					authMod.relPath + "( " + authMod.fnName + ")");
-		appCtx.hasErrors = true;
+		appCtx.hasErrors(true);
 		return;
 	}
 	
@@ -204,7 +204,7 @@ function configureProviderAuth(appCtx, authMod, provider){
 		default:
 			console.log("Does not support the provider: " + provider + 
 						". Module: " + authMod.relPath + " (" + authMod.fnName + ")");
-			appCtx.hasErrors = true;
+			appCtx.hasErrors(true);
 			return;			
 	}
 	

@@ -8,9 +8,9 @@
  You must not remove this notice, or any other, from this software.
  */
 
-var validate = lib_require("validate");
 var moment = require("moment");
 var util = require("util");
+var validator = require("validator");
 
 module.exports = function(){
 	return {};

@@ -23,7 +23,7 @@ exports.init = function(ctx, done){
 	}, function (err) {	
 		if(err){
 			console.log("Error loading npm module: " + err);
-			appCtx.hasErrors = true;
+			appCtx.hasErrors(true);
 		}else{
 			npm.on("log", function (message) {
 					// log the progress of the installation
@@ -67,7 +67,7 @@ exports.require = function(pkgName, pkgVersion, done){
 			function (err, data) {
 				if(err){
 					console.log("Error installing application package: " + pkgVersionedName + " : " + err);
-					appCtx.hasErrors = true;
+					appCtx.hasErrors(true);
 					done(false);
 				}else{
 					console.log("Application package: " + pkgVersionedName + " successfully installed");

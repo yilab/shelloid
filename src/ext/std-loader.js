@@ -15,12 +15,13 @@ module.exports = function(){
 var extInfo = 
 {
 	hooks:[	{type: "load", name: "auth", handler: authLoad},
-			{type: "load", name: "routes", handle: routeLoad},
-			{type: "load", name: "interfaces", handle: interfaceLoad}
+			{type: "load", name: "routes", handler: routeLoad},
+			{type: "load", name: "interfaces", handler: interfaceLoad}
 	]
 };
 
 function authLoad(loader, mod){
+	var appCtx = sh.appCtx;
 	if(!appCtx.authMods){
 		appCtx.authMods = [];
 	}	
@@ -28,6 +29,7 @@ function authLoad(loader, mod){
 }
 
 function authLoad(loader, mod){
+	var appCtx = sh.appCtx;
 	if(!appCtx.authMods){
 		appCtx.authMods = [];
 	}	
@@ -35,6 +37,7 @@ function authLoad(loader, mod){
 }
 
 function routeLoad(loader, mod){
+	var appCtx = sh.appCtx;
 	if(!appCtx.routes){
 		appCtx.routes = [];
 	}	
@@ -42,6 +45,7 @@ function routeLoad(loader, mod){
 }
 
 function interfaceLoad(loader, mod){
+	var appCtx = sh.appCtx;
 	if(!appCtx.interfaces){
 		appCtx.interfaces = {};
 	}	

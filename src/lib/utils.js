@@ -9,7 +9,8 @@
  */
 var fs = require("fs"),
 	path = require("path"),
-	events = require('events');	
+	events = require('events'),
+	assert =require("assert");	
 
 exports.is = function (obj, type) {
     var clz = Object.prototype.toString.call(obj).slice(8, -1);
@@ -176,15 +177,17 @@ exports.curry = function(fn){
 
 exports.priorityInsert = function(array, obj){
 	assert(Array.isArray(array));
-	if(!obj.priority){
-		array.push(obj);
+	if(!obj.priority && obj.priority != 0){
+		obj.priority = Infinity;		
+		array.push(obj);		
 		return;
 	}
+	
 	var i=0;
 	for(i=0;i < array.length;i++){
 		var e = array[i];
 		//greater numeric value means lesser priority
-		if(!e.priority || e.priority >= obj.priority){
+		if(e.priority >= obj.priority){
 			break;
 		}
 	}

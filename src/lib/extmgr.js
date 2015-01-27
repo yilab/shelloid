@@ -9,10 +9,11 @@
  */
 
 var path = require("path");
+var fs = require("fs");
 var utils = lib_require("utils");
  
 exports.loadExtensions = function(done){	
-	sh.ext = {hooks:{}, annotationProcessors:{}, mods:{}};
+	sh.ext = {hooks:{}, annotationProcessors:{}, mods:[]};
 	sh.hookPriorities = {
 		preAuth: -50,
 		auth: 0,
@@ -26,13 +27,18 @@ exports.loadExtensions = function(done){
 		"internal",
 		loadExternal.bind(
 			null, 
-			loadBuiltIns.bind(null, sh.appCtx.config.dirs.ext, "app", done)
+			loadBuiltins.bind(null, sh.appCtx.config.dirs.ext, "app", done)
 		)
 	);
 }
 
 function loadBuiltins(extDir, kind, done){
-	var files = fs.readDirSync(extDir);
+	if(!utils.dirExists(extDir)){
+		done();
+		return;
+	}
+	
+	var files = fs.readdirSync(extDir);
 	for(var i=0;i<files.length;i++){
 		var p = path.resolve(extDir, files[i]);
 		if(utils.dirExists(p)){
@@ -47,11 +53,12 @@ function loadBuiltins(extDir, kind, done){
 			addExtension(extInfo);
 		}
 	}
+	done();
 }
 
 function loadExternal(done){
 	var exts = sh.appCtx.config.extensions;
-	var barrier = countingBarrier(exts.length, done);
+	var barrier = utils.countingBarrier(exts.length, done);
 	for(var i=0;i<exts.length;i++){
 		(function(ext){
 			app_pkg.require(ext.name, ext.version,
@@ -73,14 +80,14 @@ function addExtension(extInfo){
 	if(extInfo.annotations){
 		for(var i=0;i<extInfo.annotations.length;i++){
 			var annotationDef = extInfo.annotations[i];
-			sh.ext.annotationProcessors[annotation.name] = annotationDef;
+			sh.ext.annotationProcessors[annotationDef.name] = annotationDef;
 		}
 	}
 	
 	if(extInfo.hooks){
 		for(var i=0;i<extInfo.hooks.length;i++){
 			var hook = extInfo.hooks[i];
-			if(!hook.priority){
+			if(!hook.priority && hook.priority != 0){
 				hook.priority = Infinity;
 			}
 			if(!sh.ext.hooks[hook.type]){

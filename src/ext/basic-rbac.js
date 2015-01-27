@@ -28,6 +28,7 @@ function checkRoles(req, res, done){
 		routeRoles.some(function(v){
 			if(userRoles.contains(v)){
 				req.setFlag("authr");
+				return true;
 			}
 		});
 	}

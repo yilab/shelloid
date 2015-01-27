@@ -29,11 +29,11 @@ exports.init = function(serverCtx, done){
 				types.push(type);
 			}else{
 				shelloid.error("Does not support database type: " + type + " specified in the config");
-				serverCtx.appCtx.hasErrors = true;
+				serverCtx.appCtx.hasErrors(true);
 			}
 		}
 	}
-	if(types.length == 0 || serverCtx.appCtx.hasErrors){
+	if(types.length == 0 || serverCtx.appCtx.hasErrors()){
 		process.nextTick(done);
 		return;
 	}

@@ -30,7 +30,7 @@ exports.parseAnnotations = function(loader, pathInfo, callback){
 	function newAnnotation(){
 		return {
 			$hooks :{},
-			addHook: function(hook){
+			$addHook: function(hook){
 				if(!this.$hooks[hook.type]){
 					this.$hooks[hook.type] = [];
 				}
@@ -182,37 +182,42 @@ exports.parseAnnotations = function(loader, pathInfo, callback){
 				
 			if(annReady){
 				annValue = annValue.trim();
-				try{
-					var keyFelds = annKey.split(".");				
-					var valueObj;
-					var processors = getProcessors(loader, keyFields);
-					if(processors && processors.length > 0){
-						for(var i=0;i<processors.length;i++){
-							var val = annValue;
-							if(!processors[i].raw){
-								if(!valueObj && annValue != ""){
-									eval("valueObj = " + annValue);
+				if(annKey != ""){
+					try{
+						var doNext = true;
+						var keyFields = annKey.split(".");				
+						var valueObj;
+						var processors = getProcessors(loader, keyFields);
+						if(processors && processors.length > 0){
+							for(var i=0;i<processors.length;i++){
+								var val = annValue;
+								if(!processors[i].raw){
+									if(!valueObj && annValue != ""){
+										eval("valueObj = " + annValue);
+									}
+									val = valueObj;
 								}
-								val = valueObj;
-							}
-							var doNext = processors.process(annCurrent, 
-														keyFields, val);
-							if(!doNext){
-								break;
+								doNext = processors[i].process(annCurrent, 
+															keyFields, val);
+								if(!doNext){
+									break;
+								}
 							}
 						}
-					}else{
-						if(annValue == ""){
-							annValue = "true";
+						
+						if(doNext){
+							if(annValue == ""){
+								annValue = "true;";
+							}
+							eval("valueObj = " + annValue);
+							annCurrent[annKey] = valueObj;							
 						}
-						eval("var valueObj = " + annValue);
-						annCurrent[annKey] = valueObj;							
+						
+					}catch(err){
+						console.log("ERR: Syntax error in the annotation value for @" 
+									+ annKey + ": " + err.stack + " in the file " + pathInfo.path + " Value: " + annValue);
+						serverCtx.appCtx.hasErrors(true);
 					}
-					
-				}catch(err){
-					console.log("ERR: Syntax error in the annotation value for @" 
-								+ annKey + ": " + err + " in the file " + pathInfo.path + " Value: " + annValue);
-					serverCtx.appCtx.hasErrors = true;
 				}
 				annKey = ""; 
 				annValue = "";

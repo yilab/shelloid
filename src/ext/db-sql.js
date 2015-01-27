@@ -41,7 +41,7 @@ function processSql(annotations, keyFields, value){
 	var v = annValue.replace(/\s+/g, ' ');
 	if(!annotations.sql){
 		annotations.sql = {};
-		annotations.addHook("db", {handler: addSqlMethods});
+		annotations.$addHook("db", {handler: addSqlMethods});
 	}
 	annotations.sql[sqlName] = v;	
 }
