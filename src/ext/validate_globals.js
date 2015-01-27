@@ -10,8 +10,11 @@
 
 var validate = lib_require("validate");
 var moment = require("moment");
-var validator = require("validator");
 var util = require("util");
+
+module.exports = function(){
+	return {};
+} 
 
 function OptionalParam(val){
 	this.value = val;
@@ -160,7 +163,7 @@ array.bounded = function(spec, max){
 	
 	var f = 
 	function(v, typeDef){
-		return array(v) && v.length <= max && (!spec || validate.typeOk(v, spec));
+		return array(v) && v.length <= max && (!spec || sh.validateType(v, spec));
 	};
 	f.typename = "array.bounded(" + max + ")";
 	return f;

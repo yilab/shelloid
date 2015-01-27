@@ -78,7 +78,7 @@ function validateReq(req, res, done){
 	}
 }
 
-exports.validateRes = function(req, res, done){
+function validateRes(req, res, done){
 	var modIfcRes;
 	var appCtx = sh.appCtx;
 	var obj = res.sh.obj;
@@ -163,8 +163,6 @@ function genericCheck(obj, config, req, res, opath){
 	/*shouldn't get here*/
 	return true;
 }
-
-exports.getContentType = getContentType;
 
 function getContentType(ifc){
 	if(ifc){
@@ -280,7 +278,7 @@ function typeOk(obj, typeDef, config, req, res, opath){
 	}
 }
 
-exports.typeOk = typeOk;
+sh.validateType = typeOk;
 
 function typename(t){
 	if(utils.isFunction(t)){

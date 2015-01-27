@@ -11,8 +11,7 @@
 var path = require("path");
 var utils = lib_require("utils");
  
-exports.loadExtensions(done){
-	
+exports.loadExtensions = function(done){	
 	sh.ext = {hooks:{}, annotationProcessors:{}, mods:{}};
 	sh.hookPriorities = {
 		preAuth: -50,

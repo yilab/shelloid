@@ -30,7 +30,6 @@ var loader = lib_require("loader"),
 	app   = lib_require("app"),
 	auth = lib_require("auth"),
 	app_pkg = lib_require("app_pkg"),
-	validate_globals = lib_require("validate_globals"),
 	dbconfig = lib_require("dbconfig"),
 	autorestart = lib_require("autorestart");
 	
@@ -67,7 +66,7 @@ var doRestart = true;
 
 if(isMon){
 	startMon();
-else{
+}else{
 	startServer();
 }
 
@@ -189,15 +188,15 @@ function dbInit(){
 }
 
 function appInit(){
-	init.appInit(loadAuthMods);
+	init.appInit(loadAppMods);
 }
 
-function loadAuthMods(){
+function loadAppMods(){
 	sh.info("Database initialization done");
-	loader.loadAuthMods(serverCtx, authModsLoaded);
+	loader.loadAll(appModsLoaded);
 }
 
-function authModsLoaded(){		
+function appModsLoaded(){		
 	if(serverCtx.appCtx.authMods.length == 0){
 		sh.info("No authentication modules found.");
 		authModsAdded();
@@ -208,20 +207,16 @@ function authModsLoaded(){
 }
 
 function authModsAdded(){
-	loader.loadInterfaces(serverCtx, interfacesLoaded);
-}
-
-function interfacesLoaded(){
 	if(serverCtx.appCtx.env == "sim"){
 		var sim = lib_require("sim");
 		sim.init();
-		loader.loadRoutes(serverCtx, sim.enterSimMode);
+		addRoutes();
 	}else{
-		loader.loadRoutes(serverCtx, routesLoaded);
+		addRoutes();
 	}
 }
 
-function routesLoaded(){
+function addRoutes(){
 
 	if(serverCtx.appCtx.routes.length == 0){
 		console.log("No routes configured! Exiting.");

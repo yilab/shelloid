@@ -9,8 +9,7 @@
  */
 var domain = require('domain');
 var path = require("path");
-var utils = lib_require("utils"),
-	validate = 	lib_require("validate");
+var utils = lib_require("utils");
 
 exports.addAll = function(appCtx){
 	var routes = appCtx.routes;
@@ -177,7 +176,7 @@ function invokeHooks(hookType, req, res, done){
 		req.sh.flags[flag] = false;
 	};
 	
-	var processNext(){
+	var processNext = function(){
 		if(req.sh.flags["abort"]){
 			res.status(req.sh.flagStatus).end(req.sh.flagMsg);
 			done(false);
