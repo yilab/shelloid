@@ -280,31 +280,12 @@ module.exports = function (name, parentDomain, mod) {
 	}
 
 	for(var i=0;i<annotations.length;i++){
-		var sql = annotations[i].sql;
-		var keys = Object.keys(sql);
-		for(var i=0;i<keys.length;i++){
-			var sqlName = keys[i];
-			var sqlString = sql[sqlName];
-			if(sqlName != "query" && sqlName != "genericQuery"){
-				db[sqlName] = queryFunction.bind(db, sqlString);
-			}else{
-				db.processError("Cannot use built in names query/genericQuery for query names");
+		var dbHooks = annotations[i].$hooks.db;
+		if(dbHooks){
+			for(var j=0;j<dbHooks.length;j++){
+				dbHooks[j].handler(annotations[i], db);
 			}
 		}
 	}
 	return db;
 };
-
-function queryFunction(sqlString, maybeFn){
-	var db = this;
-	var params = Array.prototype.slice.call(arguments);				
-	if(utils.isFunction(maybeFn)){
-		var genFn = function(){
-			var queryParams = maybeFn();
-			return [sqlString, queryParams];
-		};
-		params = [genFn];
-	}
-	var queryFn = db.query || db.genericQuery;
-	return queryFn.apply(db, params);
-}

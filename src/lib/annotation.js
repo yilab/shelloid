@@ -10,8 +10,10 @@
 var fs = require("fs");
 var path = require("path");
 var liner = lib_require("liner");
+var utils = lib_require("utils");
 
-exports.parseAnnotations = function(serverCtx, pathInfo, callback){
+exports.parseAnnotations = function(loader, pathInfo, callback){
+	var serverCtx = sh.serverCtx;
 	var NONE = 0, SINGLE_QUOTED = 1, DOUBLE_QUOTED = 2, READING_KEY=3, READING_VALUE=4;
 	var stringState = NONE;
 	var annState = NONE;
@@ -25,7 +27,21 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	var charCode9 = "9".charCodeAt(0);
 	var annotations = {
 	};
-	var annCurrent = {sql:{}};
+	function newAnnotation(){
+		return {
+			$hooks :{},
+			addHook: function(hook){
+				if(!this.$hooks[hook.type]){
+					this.$hooks[hook.type] = [];
+				}
+				if(!hook.priority){
+					hook.priority = Infinity;
+				}
+				utils.priorityInsert(this.$hooks[hook.type], hook);
+			}
+		};
+	};
+	var annCurrent = newAnnotation();
 	
 	var idChar = function(c, extraSym){
 		n = c.toLowerCase().charCodeAt(0);
@@ -74,9 +90,9 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 					var fnPath = path.normalize(pathInfo.path) + "/" + id;
 					sh.annotations[fnPath] = annCurrent;
 				}
-				annCurrent = {sql:{}};
+				annCurrent = newAnnotation();
 			}else{
-				annCurrent = {sql:{}};
+				annCurrent = newAnnotation();
 			}
 		}
 		
@@ -138,7 +154,7 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 						charProcessed = true;
 						skipChars = 1;
 						inComment = true;
-						annCurrent = {sql:{}};
+						annCurrent = newAnnotation();
 						var nextNextChar = (i+2) < lineLength ? line[i+2] : "";
 						if(nextNextChar == '*'){
 							skipChars++;
@@ -167,22 +183,30 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 			if(annReady){
 				annValue = annValue.trim();
 				try{
-					if(sh.ext.annotationProcessors[annKey]){
-						sh.ext.annotationProcessors[annKey].process(
-												annCurrent, annKey, annValue);
+					var keyFelds = annKey.split(".");				
+					var valueObj;
+					var processors = getProcessors(loader, keyFields);
+					if(processors && processors.length > 0){
+						for(var i=0;i<processors.length;i++){
+							var val = annValue;
+							if(!processors[i].raw){
+								if(!valueObj && annValue != ""){
+									eval("valueObj = " + annValue);
+								}
+								val = valueObj;
+							}
+							var doNext = processors.process(annCurrent, 
+														keyFields, val);
+							if(!doNext){
+								break;
+							}
+						}
 					}else{
 						if(annValue == ""){
 							annValue = "true";
 						}
-						eval("var v = " + annValue);
-						annCurrent[annKey] = v;							
-					}
-					//TODO MOVE THIS TO EXT:
-					var sqlPrefix = "sql.";
-					if(annKey.startsWith(sqlPrefix)){
-						var sqlName = annKey.substring(sqlPrefix.length);
-						var v = annValue.replace(/\s+/g, ' ');
-						annCurrent.sql[sqlName] = v;
+						eval("var valueObj = " + annValue);
+						annCurrent[annKey] = valueObj;							
 					}
 					
 				}catch(err){
@@ -215,4 +239,34 @@ exports.parseAnnotations = function(serverCtx, pathInfo, callback){
 	
 }
 
-
+function getProcessors(loader, keyFields){
+	var processors = sh.ext.annotationProcessors;
+	var res = [];
+	if(keyFields.length > 1)
+	{
+		var ns = keyFields[0];		
+		for(var i=0;i<keyFields.length-1;i++){
+			var processor = processors[ns];
+			if(processor){
+				res.unshift(processor);
+			}
+			processor = loader.annotationProcessors[ns];
+			if(processor){
+				res.unshift(processor);
+			}
+			ns = ns + "." + keyFields[i+1];
+		}
+		return res;
+	}else{
+		//optimized version
+		var processor = processors[keyFields[0]];
+		if(processor){
+			res.unshift(processor);
+		}
+		var processor = loader.annotationProcessors[keyFields[0]];
+		if(processor){
+			res.unshift(processor);
+		}		
+		return res;
+	}
+}

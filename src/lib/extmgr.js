@@ -8,17 +8,27 @@
  You must not remove this notice, or any other, from this software.
  */
 
-exports.loadExtensions(appCtx, done){ 
-	loadBuiltins(appCtx, loadUserSupplied.bind(null, appCtx, done));
+var path = require("path");
+var utils = lib_require("utils");
+ 
+exports.loadExtensions(done){
+	var internalBuiltInsDir = path.join(sh.serverCtx.basePath, "src/ext");
+	loadBuiltins(
+		internalBuiltInsDir, 
+		loadExternal.bind(
+			null, 
+			loadBuiltIns.bind(null, sh.appCtx.config.dirs.ext, done)
+		)
+	);
 }
 
-function loadBuiltins(appCtx, done){
-	var paths = utils.recurseDirSync(appCtx.config.dirs.ext);
+function loadBuiltins(builtinsDir, done){
+	var paths = utils.recurseDirSync(builtInsDir);
 	for(var i=0;i<paths.length;i++){
 		var pathInfo = paths[i];
 		var ext = require(pathInfo.path);
 	}
 }
 
-function loadUserSupplied(appCtx, done){
+function loadExternal(done){
 }

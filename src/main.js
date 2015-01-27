@@ -65,6 +65,12 @@ var lastRestart = new Date().valueOf();
 var isMon = args[1] !== "--nomon" && args[2] !== "--nomon";
 var doRestart = true;
 
+if(isMon){
+	startMon();
+else{
+	startServer();
+}
+
 function onChildExit(){
 	if(!doRestart){
 		console.log("Exiting server");
@@ -95,12 +101,6 @@ function startMon(){
 	process.on ('SIGTERM', shutdownMon);
 	process.on ('SIGINT', shutdownMon);
 	process.on ('SIGHUP', shutdownMon);
-}
-
-if(isMon){
-	startMon();
-else{
-	startServer();
 }
 
 function startServer(){
@@ -175,7 +175,7 @@ function app_pkg_initDone(err){
 		process.exit(0);
 	}else{
 		sh.info("Application package manager initialization done.");	
-		extMgr.loadExtensions(serverCtx.appCtx, createAppInstance);
+		extMgr.loadExtensions(createAppInstance);
 	}
 }
 

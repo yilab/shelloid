@@ -173,3 +173,25 @@ exports.curry = function(fn){
 		return fn.apply(this, args);
 	}
 }
+
+exports.priorityInsert = function(array, obj){
+	assert(Array.isArray(array));
+	if(!obj.priority){
+		array.push(obj);
+		return;
+	}
+	var i=0;
+	for(i=0;i < array.length;i++){
+		var e = array[i];
+		//greater numeric value means lesser priority
+		if(!e.priority || e.priority >= obj.priority){
+			break;
+		}
+	}
+	
+	if(i >= array.length){
+		array.push(obj);
+	}else{
+		array.splice(i, 0, obj);
+	}
+}

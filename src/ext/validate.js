@@ -11,47 +11,120 @@
 var utils = lib_require("utils");
 var util = require("util");
 
-exports.requestOk = function(req, ifc, appCtx){	
+module.exports = function(){
+	return extInfo;
+} 
+
+var extInfo = 
+{
+	hooks:[
+	{type: "preroute", handler: validateReq, priority: sh.hookPriorities.postAuth, invokeIf: ["auth", "authr"]},
+	{type: "postroute", handler: validateRes}	
+	]
+};
+
+function validateReq(req, res, done){
+	var modIfcReq;
+	var appCtx = sh.appCtx;
+	var interfaceName = req.route.annotations["interface"];
+
+	if(interfaceName){
+		modIfcReq = appCtx.interfaces[interfaceName + "/req"];
+	}
+		
+	var ifc = modIfcReq ? modIfcReq.fn : false;
+	
 	var contentType = getContentType(ifc);
 	var foundType = req.headers["content-type"];
 	if(contentType && (!foundType || !foundType.startsWith(contentType))){
 		sh.error("Content-type mismatch for: " + req.url + 
 				  ". Expected: " + contentType + 
 				   ". Found: " + foundType);
-		return false;
+		req.setFlag("abort", 400, "Bad Request");
+		done();
+		return;
 	}
 
 	if(!ifc){
-		return genericCheck(req.body, appCtx.config.validate.req, req) &&
-			   genericCheck(req.query, appCtx.config.validate.req, req);
+		var ok = genericCheck(req.body, appCtx.config.validate.req, req) &&
+				 genericCheck(req.query, appCtx.config.validate.req, req);
+		if(!ok){
+			req.setFlag("abort", 400, "Bad Request");
+		}		
+		done();
+		return;
 	}	
 
 	if(req.body && ifc.body){
 		if(!typeOk(req.body, ifc.body, appCtx.config.validate.req, req)){
-			return false;
+			req.setFlag("abort", 400, "Bad Request");
+			done();
+			return;
 		}
 	}
 	
 	if(req.query && ifc.query){
 		if(!typeOk(req.query, ifc.query, appCtx.config.validate.req, req)){
-			return false;
+			req.setFlag("abort", 400, "Bad Request");
+			done();
+			return;
 		}
 	}
-	
-	return true;
+
+	if(ifc.validate){
+		ifc.validate(req, sh.routeCtx, done);
+	}else{
+		done();
+	}
 }
 
-exports.responseOk = function(req, res, obj, ifc, appCtx){
+exports.validateRes = function(req, res, done){
+	var modIfcRes;
+	var appCtx = sh.appCtx;
+	var obj = res.sh.obj;
+	var contentType = getContentType(ifc);
+	
+	if(!obj){
+		if(contentType){
+			res.setHeader("Content-Type", contentType);
+		}			
+		done();
+		return;
+	}
+	var interfaceName = req.route.annotations["interface"];
+
+	if(interfaceName){
+		modIfcRes = appCtx.interfaces[interfaceName + "/res"];
+	}
+		
+	var ifc = modIfcRes ? modIfcRes.fn : false;
+	
 	if(!ifc){
-		return genericCheck(obj, appCtx.config.validate.res, req, res);
+		var ok = genericCheck(obj, appCtx.config.validate.res, req, res);
+		if(!ok){
+			req.setFlag("abort", 500, "Bad Response");
+		}
+		done();
+		return;
 	}
 	
 	if(ifc && ifc.body){
 		if(!typeOk(obj, ifc.body, appCtx.config.validate.res, req, res)){
-			return false;
+			req.setFlag("abort", 500, "Bad Response");
+			done();
+			return;
 		}
 	}
-	return true;
+
+	if(ifc.validate){
+		ifc.validate(req, res, sh.routeCtx, done);
+	}else{
+		if(contentType){
+			res.setHeader("Content-Type", contentType);
+		}		
+		done();
+	}
+
 }
 
 function genericCheck(obj, config, req, res, opath){

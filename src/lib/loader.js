@@ -36,7 +36,8 @@ exports.loadInterfaces = function(serverCtx, done)
 	loadModules(serverCtx, p, "interface", serverCtx.appCtx.interfaces, done);
 }
 
-function loadModules(serverCtx, modPath, modType, mods, done){	
+function loadModules(loader, modPath, modType, mods, done){	
+	var serverCtx = sh.serverCtx;
 	if(!utils.dirExists(modPath)){
 		console.log("The " + modType + " folder does not exist: " + modPath);
 		process.nextTick(done);
@@ -49,7 +50,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 	for(var i=0;i<paths.length;i++){
 		if(paths[i].path.endsWith(".js")){
 			console.log("Processing: " + paths[i].path + " (" + modType + ")" );
-			annotation.parseAnnotations(serverCtx, paths[i],  
+			annotation.parseAnnotations(loader, paths[i],  
 				function(pathInfo, annotations){
 					if(!annotations){
 						annotations = {};
@@ -67,6 +68,7 @@ function loadModules(serverCtx, modPath, modType, mods, done){
 							if(!annotations[f].ignore){
 								var mod = 
 									{
+										loader: loader,
 										type: modType,
 										fn: m[f],
 										fnName: f,

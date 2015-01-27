@@ -77,58 +77,35 @@ function addRoute(appCtx, route){
 	return true;
 }
 
-function routeWrapper(route, appCtx){
-	var doAuth = true;
-	var isAuthRoute = (route.type == "auth");
-	
-	if(isAuthRoute || route.annotations.noauth){
-		doAuth = false;
-		if(route.type != "auth"){
-			console.log("Authentication disabled with @noauth for " + route.relPath + " (" + 
-						route.fnName + ")");
-		}
-	}
-	
-	var modIfcReq, modIfcRes;
-	var interfaceName = route.annotations["interface"];
-
-	if(interfaceName){
-		modIfcReq = appCtx.interfaces[interfaceName + "/req"];
-		modIfcRes = appCtx.interfaces[interfaceName + "/res"];
-	}
-		
-	var ifcReq = modIfcReq ? modIfcReq.fn : false;
-	var ifcRes = modIfcRes ? modIfcRes.fn : false;
-	
+function routeWrapper(route, appCtx){		
 	return function(req, res){
 		req.route = route;
+		req.sh = {flags:{}, errors:[]};
+		res.sh = {};
+	
+		var postrouteDone = function(proceed){
+			if(!proceed){
+				sh.error("Postroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
+				logErrors(req);
+				return;
+			}
 
-		if(!preprocessRequest(req, res, route)){
-			return;
+			if(res.sh.pendingOp.op == "json"){
+				res.json_.apply(res, res.sh.pendingOp.params);
+			}else
+			if(res.sh.pendingOp.op == "render"){
+				res.render_.apply(res, res.sh.pendingOp.params);
+			}else{
+				throw new Error("Unknown operation in postrouteDone(): " + res.sh.pendingOp);
+			}				
 		}
-		
-		req.validated = function(){
+		var invokeRoute = function(){
 			res.json_ = res.json;
 			res.render_ = res.render;
-			res.validated = function(){			
-				if(res.sh.pendingOp == "json"){
-					res.json_.apply(res, res.sh.opParams);
-				}else
-				if(res.sh.pendingOp == "render"){
-					res.render_.apply(res, res.sh.opParams);
-				}else{
-					throw new Error("Unknown operation in res.validate()");
-				}
-			}
-			res.assert = function(cond){
-				if(!cond){
-					var msg = sh.caller("Assertion failed in function");
-					throw(new ValidateError(msg));
-				}
-			};			
 			res.json = function(obj){
-				res.sh = {pendingOp: "json", opParams: [obj]};
-				checkResponseObject(req, res, obj, ifcRes, appCtx);
+				res.sh.pendingOp = {op: "json", params: [obj]};
+				res.sh.obj = obj;
+				invokeHooks("postroute", req, res, postrouteDone);
 				return res;
 			};			
 
@@ -144,187 +121,121 @@ function routeWrapper(route, appCtx){
 						view = "themes/" + appCtx.config.theme + "/" + view;
 					}
 				}
-				res.sh = {pendingOp: "render", opParams: [view, localsOrCallback, callback]};			
-				if(!utils.isObject(localsOrCallback)){
-					res.render_(view, localsOrCallback, callback);
-				}else{
-					checkResponseObject(req, res, localsOrCallback, ifcRes, appCtx);
+				res.sh.pendingOp = 
+					{op: "render", params: [view, localsOrCallback, callback]};			
+				if(utils.isObject(localsOrCallback)){
+					res.sh.obj = localsOrCallback;
 				}
+				invokeHooks("postroute", req, res, postrouteDone);
 				return res;
 			}
-			
-			var d0 = require('domain').create();
-			d0.add(req);
-			d0.add(res);
-			d0.on('error', function(err) {
-				if(err.constructor.name == "ValidateError"){
-					sh.error("Response validate error: " + er.msg + " for " + req.url);
-				}else{			
-					sh.error(sh.caller("Error executing the response stack for: " + req.url + ". Error: " + err.stack));
-					res.status(500).end("Internal Server Error.");	
-				}
-			});
-			req.db = function(name){
-				return sh.db(name, d0, route);
-			}
-			req.seq = function(name, options){
-				return sh.seq(name, options, d0);
-			}															
-			d0.run(function(){
-				route.fn(req, res, sh.routeCtx);
-			});
-		};
-		
-		req.assert = function(cond){//TODO remove request.assert
-			if(!cond){
-				var msg = sh.caller("Assertion failed in function");
-				throw(new ValidateError(msg));
-			}
-		};
+			req.sh.errors = [];//clear any errors from previous steps.
+			route.fn(req, res, sh.routeCtx);
+		};		
 				
-		var postAuth = function(authOk){
-			if(!authOk){
-				res.status(401).send('Unauthorized');
-				console.log("Unauthenticated access to: " + route.relPath + " (" + route.fnName + ")");
+		var prerouteDone = function(proceed){
+			if(!proceed){
+				sh.error("Preroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
+				logErrors(req);
 				return;
 			}else{
-				if(isAuthRoute || validate.requestOk(req, ifcReq, appCtx)){
-					if(ifcReq.validate){
-						var d = require('domain').create();
-						d.add(req);
-						d.add(res);
-						d.on('error', function(er) {
-							if(er.constructor.name == "ValidateError"){
-								sh.error("Validate Error: " + er.msg);
-							}else{
-								sh.error("System Error: " + er.msg);
-							}
-							res.status(400).end("Bad Request");
-						});
-						req.db = function(name){
-							return sh.db(name, d);
-						}						
-						req.seq = function(name, options){
-							return sh.seq(name, options, d);
-						}												
-						d.run(function(){
-							ifcReq.validate(req, sh.routeCtx);
-						});
+				invokeRoute();
+			}
+		}		
+		
+		var d = require('domain').create();
+		d.add(req);
+		d.add(res);
+		d.on('error', function(er) {
+			sh.error("Request Processing Error: " + er.msg);
+			res.status(500).end("Internal Server Error.");
+		});
+		req.db = function(name){
+			return sh.db(name, d);
+		}						
+		req.seq = function(name, options){
+			return sh.seq(name, options, d);
+		}												
+		d.run(function(){
+			invokeHooks("preroute", req, res, prerouteDone);			
+		});
+		
+	}
+}
+
+function invokeHooks(hookType, req, res, done){
+	var globalHooks = sh.ext.hooks[type];
+	var routeHooks = req.route.annotations.$hooks[hookType];
+	var r=0,g=0;
+
+	req.setFlag = function(flag, status, msg){
+		req.sh.flags[flag] = true;
+		req.sh.flagStatus = status;
+		req.sh.flagMsg = msg;
+	};
+	req.resetFlag = function(flag){
+		req.sh.flags[flag] = false;
+	};
+	
+	var processNext(){
+		if(req.sh.flags["abort"]){
+			res.status(req.sh.flagStatus).end(req.sh.flagMsg);
+			done(false);
+			return;
+		}
+
+		var terminate = false;
+		var hook=false;
+		while(!hook || terminate){
+			if( (r < routeHooks.length) && 
+				(routeHooks[r].priority <= globalHooks[g].priority) ){
+				hook = routeHooks[r];
+				r++;
+			}else
+			if(g < globalHooks.length){
+				hook = globalHooks[g];
+				g++;
+			}else{
+				terminate = true;
+			}
+			if(hook && hook.invokeIf){
+				for(var i=0;i<hook.invokeIf.length;i++){
+					var invokeIf = hook.invokeIf[i];
+					var flagValue;
+					if(invokeIf.startsWith("!")){
+						var f = invokeIf.substring(1);
+						flagValue = !req.sh.flags[f];
 					}else{
-						req.validated();
+						flagValue = req.sh.flags[invokeIf];
 					}
-				}else{
-					sh.info(sh.loc("Bad request at: " + req.url));
-					res.status(400).end("Bad Request");
+					if(!flagValue){
+						hook = null;
+						break;
+					}
 				}
 			}
 		}
 		
-		if(doAuth){
-			checkAuth(req, res, route, postAuth);
+		if(hook){
+			process.nextTick(hook.handler.bind(null, req, res, processNext));
 		}else{
-			postAuth(true);
-		}
-		
-	}
-}
-
-function ValidateError(msg){
-	this.msg = msg;
-}
-
-function checkResponseObject(req, res, obj, ifcRes, appCtx){
-	var contentType = validate.getContentType(ifcRes);
-	if(contentType){
-		res.setHeader("Content-Type", contentType);
-	}
-	if(!validate.responseOk(req, res, obj, ifcRes, appCtx)){
-		res.status(500).end("Server Error: Bad Response!");	
-	}
-	if(ifcRes.validate){
-		ifcRes.validate(req, res, sh.routeCtx);
-	}else{
-		res.validated();
-	}
-}
-
-function preprocessRequest(req, res, route){
-	var config = sh.serverCtx.appCtx.config;
-	if(req.headers.origin && (config.allowDomains.length > 0)){
-		doCors(req, res, route, config.allowDomains);
-	}
-	return true;
-}
-
-function doCors(req, res, route, allowDomains){
-	if(route.annotations.allowDomains === false){
-		sh.error("Cross origin request for " + req.url + " for which @allowDomains is false");
-		return;
-	}
-	var origin = req.headers.origin.toLowerCase();
-	for(var i=0;i<allowDomains.length;i++){
-		var allow = allowDomains[i];
-		var domain = allow.domain;
-		if(domain == "*" || (domain == origin) || (allow.isRegExp && allow.domain.test(origin))){
-			res.setHeader("Access-Control-Allow-Origin", origin);
-			if(allow.cookie){
-				res.setHeader("Access-Control-Allow-Credentials", "true");			
+			var fail = false;
+			for(var i=0;i<config.preroute.requiredFlags.length;i++){
+				if(!req.sh.flags[config.preroute.requiredFlags[i]]){
+					fail = true;
+					break;
+				}
 			}
-			var methods = req.headers["Access-Control-Request-Method"];
-			if(methods){
-				methods = "GET, POST, OPTIONS, " + methods;
-				res.setHeader("Access-Control-Allow-Methods", methods);
-			}
-			var headers = req.headers["Access-Control-Request-Headers"];
-			if(headers){
-				res.setHeader("Access-Control-Allow-Headers", headers);
-			}			
-			res.setHeader("Access-Control-Max-Age", "1728000");
-			break;
+			fail ? 	process.nextTick(done.bind(null, false)) : 
+					process.nextTick(done.bind(null, true));
 		}
-	}
-}
-
-function checkAuth(req, res, route, callback){	
-	var auth = req.route.annotations.auth;	
-	var calledBack = false;
-	var success = function(obj){
-		if(calledBack) return;
-		calledBack = true;
-		req.user = obj;
-		callback(true);
-	}
-	var err = function(msg){
-		if(calledBack) return;
-		calledBack = true;	
-		sh.error("Authentication failure for: " + req.url + ". Error: " + msg);
-		callback(false);
-	}
-	if(auth){
-		var authMod = sh.serverCtx.appCtx.customAuths[auth];
-		if(authMod){
-			authMod.fn(req, success, err);			
-		}else{
-			sh.error("Custom authentication module for: " + auth + " not found. Falling back on session auth");
-		}
-	}else{
-		if(req.user){
-			callback(rolesOk(req, route));
-		}else{
-			callback(false);
-		}
-	}
-}
-
-function rolesOk(req, route){
-	var routeRoles = route.annotations.roles || ["user"];
-	var userRoles = req.user ? req.user.roles : null;
-	if(!userRoles){
-		sh.error("User does not have the necessary role privilege to access: " + req.url);
-		return false;
 	}
 	
-	return routeRoles.some(function(v){
-		return userRoles.indexOf(v) >= 0;
-	});
+	processNext();
+}
+
+function logErrors(req){
+	for(var i=0;i<req.sh.errors.length;i++){
+		sh.error(req.sh.errors[i]);
+	}
 }

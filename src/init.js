@@ -39,6 +39,13 @@ exports.installGlobals = function(){
 		setTheme(config);
 	}
 	sh.annotations = {};
+	sh.hooks = {};
+	sh.hookPriorities = {
+		preAuth: -50,
+		auth: 0,
+		authr: 50,
+		postAuth: 100
+	};
 }
 
 exports.loadAppConfig = function(appCtx){
@@ -183,6 +190,9 @@ exports.serverCtx = function(pathParam, envName){
 					appUpdate: true,
 					serverUpdate: true
 				},
+				preroute:{
+					requiredFlags : ["auth", "authr"]
+				}
 				shutdownWaitMillis: 10*1000,
 				dirs : {
 					routes: "src/routes", 
