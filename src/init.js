@@ -38,14 +38,7 @@ exports.installGlobals = function(){
 		config.theme = theme;
 		setTheme(config);
 	}
-	sh.annotations = {};
-	sh.hooks = {};
-	sh.hookPriorities = {
-		preAuth: -50,
-		auth: 0,
-		authr: 50,
-		postAuth: 100
-	};
+	sh.annotations = {};	
 }
 
 exports.loadAppConfig = function(appCtx){
@@ -97,8 +90,6 @@ exports.loadAppConfig = function(appCtx){
 		setTheme(config);
 		config.dirs._pub = config.dirs.pub;
 		config.dirs.pub  = path.resolve(appCtx.basePath, config.dirs.pub);		
-		config.dirs._sim = config.dirs.sim;
-		config.dirs.sim = path.resolve(appCtx.basePath, config.dirs.sim);
 		config.https._key = config.https.key;
 		config.https._cert = config.https.cert;
 		config.https._pfx = config.https.pfx;
@@ -192,19 +183,19 @@ exports.serverCtx = function(pathParam, envName){
 				},
 				preroute:{
 					requiredFlags : ["auth", "authr"]
-				}
+				},
+				extensions:[
+					//{name: "", version: ""}
+				],
 				shutdownWaitMillis: 10*1000,
+				appModules:["routes", "auth", "interfaces"],
 				dirs : {
-					routes: "src/routes", 
-					auth: "src/auth",
-					interfaces: "src/interfaces",
 					pub: "src/public",
 					views: "src/views",
 					pubThemes: "src/themes",
 					data: "data",
 					uploads: "uploads",
 					init: "src/init.js",
-					sim: "src/sim",
 					ext: "src/ext"
 				},			
 				enableCluster: false,

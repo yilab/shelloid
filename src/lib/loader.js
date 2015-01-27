@@ -12,31 +12,32 @@ var path = require("path");
 var utils = lib_require("utils");
 var annotation = lib_require("annotation");
 
-exports.loadRoutes = function(serverCtx, done)
-{
-	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.routes);
-	p = path.normalize(p);
-	serverCtx.appCtx.folders.routes = p;	
-	loadModules(serverCtx, p, "route", serverCtx.appCtx.routes, done);
+exports.loadAll = function(done){
+	var config = sh.appCtx.config;
+	for(var i=0;i<config.appModules.length;i++){
+		var modName = config.appModules[i];
+		var p = config.dirs[modName];
+		if(!p){
+			p = "src/" + modName;
+		}
+		p = path.normalize(path.resolve(sh.appCtx.basePath, p));
+		var hooks = sh.ext.hooks["load"];
+		for(var j=0;j< hooks.length;j++){
+			var hook = hooks[j];
+			if(hook.name == modName){
+				gotHook = true;
+				break;
+			}
+		}
+		if(gotHook){
+			var loader = {hook:hook, modType: modName, modPath : p};
+		}
+	}
 }
 
-exports.loadAuthMods = function(serverCtx, done)
-{
-	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.auth);
-	p = path.normalize(p);
-	serverCtx.appCtx.folders.authMods = p;	
-	loadModules(serverCtx, p, "auth", serverCtx.appCtx.authMods, done);
-}
-
-exports.loadInterfaces = function(serverCtx, done)
-{
-	var p = path.resolve(serverCtx.appCtx.basePath, serverCtx.appCtx.config.dirs.interfaces);
-	p = path.normalize(p);
-	serverCtx.appCtx.folders.interfaces = p;	
-	loadModules(serverCtx, p, "interface", serverCtx.appCtx.interfaces, done);
-}
-
-function loadModules(loader, modPath, modType, mods, done){	
+function loadModules(loader, done){	
+	var modPath = loader.modPath;
+	var modType = loader.modType;
 	var serverCtx = sh.serverCtx;
 	if(!utils.dirExists(modPath)){
 		console.log("The " + modType + " folder does not exist: " + modPath);
@@ -77,11 +78,7 @@ function loadModules(loader, modPath, modType, mods, done){
 										relPath : pathInfo.relPath,
 										url: url
 									};
-								if(modType == "interface"){
-									mods[url] = mod;
-								}else{
-									mods.push(mod);
-								}
+								loader.hook.handler(loader, mod);
 							}else{
 								console.log("Ignoring app module with @ignore: " + 
 																pathInfo.relPath + " (" + f + ")");

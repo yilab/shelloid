@@ -12,23 +12,82 @@ var path = require("path");
 var utils = lib_require("utils");
  
 exports.loadExtensions(done){
+	
+	sh.ext = {hooks:{}, annotationProcessors:{}, mods:{}};
+	sh.hookPriorities = {
+		preAuth: -50,
+		auth: 0,
+		authr: 50,
+		postAuth: 100
+	};
+	
 	var internalBuiltInsDir = path.join(sh.serverCtx.basePath, "src/ext");
 	loadBuiltins(
 		internalBuiltInsDir, 
+		"internal",
 		loadExternal.bind(
 			null, 
-			loadBuiltIns.bind(null, sh.appCtx.config.dirs.ext, done)
+			loadBuiltIns.bind(null, sh.appCtx.config.dirs.ext, "app", done)
 		)
 	);
 }
 
-function loadBuiltins(builtinsDir, done){
-	var paths = utils.recurseDirSync(builtInsDir);
-	for(var i=0;i<paths.length;i++){
-		var pathInfo = paths[i];
-		var ext = require(pathInfo.path);
+function loadBuiltins(extDir, kind, done){
+	var files = fs.readDirSync(extDir);
+	for(var i=0;i<files.length;i++){
+		var p = path.resolve(extDir, files[i]);
+		if(utils.dirExists(p)){
+			p = path.resolve(p, "index.js");
+		}
+		if(utils.fileExists(p)){
+			var ext = require(p);
+			var extInfo = ext();
+			extInfo.path = p;
+			extInfo.name = files[i];
+			extInfo.kind = kind;
+			addExtension(extInfo);
+		}
 	}
 }
 
 function loadExternal(done){
+	var exts = sh.appCtx.config.extensions;
+	var barrier = countingBarrier(exts.length, done);
+	for(var i=0;i<exts.length;i++){
+		(function(ext){
+			app_pkg.require(ext.name, ext.version,
+				function(mod){
+					extInfo = mod();
+					extInfo.kind  = "external";
+					extInfo.name = ext.name;
+					extInfo.version = ext.version;
+					addExtension(extInfo);
+					barrier.countDown();
+				}
+			);
+		})(exts[i]);
+	}	
+}
+
+function addExtension(extInfo){
+	sh.ext.mods.push(extInfo);
+	if(extInfo.annotations){
+		for(var i=0;i<extInfo.annotations.length;i++){
+			var annotationDef = extInfo.annotations[i];
+			sh.ext.annotationProcessors[annotation.name] = annotationDef;
+		}
+	}
+	
+	if(extInfo.hooks){
+		for(var i=0;i<extInfo.hooks.length;i++){
+			var hook = extInfo.hooks[i];
+			if(!hook.priority){
+				hook.priority = Infinity;
+			}
+			if(!sh.ext.hooks[hook.type]){
+				sh.ext.hooks[hook.type] = [];
+			}
+			utils.priorityInsert(sh.ext.hooks[hook.type], hook);
+		}
+	}
 }
