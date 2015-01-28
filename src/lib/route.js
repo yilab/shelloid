@@ -164,7 +164,7 @@ function routeHandler(req, res){
 		res.status(500).end("Internal Server Error.");
 	});
 	req.db = function(name){
-		return sh.db(name, d);
+		return sh.db(name, d, route);
 	}						
 	req.seq = function(name, options){
 		return sh.seq(name, options, d);

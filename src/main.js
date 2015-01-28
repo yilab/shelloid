@@ -217,7 +217,7 @@ function authModsAdded(){
 }
 
 function addRoutes(){
-	console.log("hooks", sh.ext.hooks);
+	
 	if(serverCtx.appCtx.routes.length == 0){
 		console.log("No routes configured! Exiting.");
 		process.exit();

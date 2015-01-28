@@ -7,6 +7,8 @@
  the terms of this license.
  You must not remove this notice, or any other, from this software.
  */
+var assert = require("assert");
+var utils = lib_require("utils");
 
 module.exports = function(){
 	return extInfo;
@@ -38,10 +40,10 @@ function processSql(annotations, keyFields, value){
 		return true;
 	}
 	var sqlName = keyFields[1];
-	var v = annValue.replace(/\s+/g, ' ');
+	var v = value.replace(/\s+/g, ' ');
 	if(!annotations.sql){
 		annotations.sql = {};
-		annotations.$addHook("db", {handler: addSqlMethods});
+		annotations.$addHook({type: "db", handler: addSqlMethods});
 	}
 	annotations.sql[sqlName] = v;	
 }

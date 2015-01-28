@@ -265,7 +265,6 @@ module.exports = function (name, parentDomain, mod) {
 	}
     var db = new EasyDb(config, parentDomain);
 	
-	
 	var annotations = [];
 	if(mod){
 		annotations.push(mod.annotations);
@@ -278,7 +277,6 @@ module.exports = function (name, parentDomain, mod) {
 			annotations.push(sh.annotations[p]);
 		}
 	}
-
 	for(var i=0;i<annotations.length;i++){
 		var dbHooks = annotations[i].$hooks.db;
 		if(dbHooks){
