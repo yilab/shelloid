@@ -1,8 +1,8 @@
 {
   "name": "shelloid",
   "author" : "jayaraj-poroor",
-  "version": "0.2.0-a1",
-  "description": "Simple and secure Node.js web application server.",
+  "version": "0.2.0-a2",
+  "description": "Open source Node.js application server with open, extensible architecture.",
   "main": "src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
