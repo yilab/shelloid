@@ -1,17 +1,9 @@
 Shelloid
 ========
 
-The Node.js Web Application Server that simplifies the development of secure & dependable web applications/services.
+Shelloid is an open source web application server for Node.js with an open, extensible architecture. Shelloid goes beyond merely being open source. Shelloid has a open architecture created from ground up, allowing you easily write extensions that can modify the behaviour of the engine to suit your needs. Many of Shelloid's  built-in features are themselves built as extensions, leading to a relatively small and robust core.
 
-In order to improve programmer productivity and make your code readable, maintainable, and secure, Shelloid employs the following foundational principles:
-
-* Convention over configuration.
-
-* Declarative over procedural.
-
-* Separation of concerns.
-
-* Secure defaults.
+Our vision is to simplify the development of secure and robust web applications and services, improving programmer productivity and enabling quick time-to-market. Shelloid takes care of the infrastructure logic and lets you focus on your business logic, leading to quick time to market for your business-critical applications. Shelloid is open sourced under LGPL license, allowing you to run your commercial closed source applications on the top of it.
 
 Getting started
 =================
