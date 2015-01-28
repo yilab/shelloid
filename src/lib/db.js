@@ -277,6 +277,12 @@ module.exports = function (name, parentDomain, mod) {
 			annotations.push(sh.annotations[p]);
 		}
 	}
+	var globalHooks = sh.ext.hooks.db;
+	if(globalHooks){
+		for(var k=0;k< globalHooks.length;k++){
+			globalHooks[k](db);
+		}
+	}
 	for(var i=0;i<annotations.length;i++){
 		var dbHooks = annotations[i].$hooks.db;
 		if(dbHooks){
