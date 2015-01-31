@@ -185,6 +185,9 @@ exports.serverCtx = function(pathParam, envName){
 			},
 			config: {
 				theme: null,
+				hosts: {
+					//host name :{theme : xxx}
+				},
 				viewEngine : "ejs",
 				autoRestart:{
 					thresholdMillis: 3000,

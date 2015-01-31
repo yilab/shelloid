@@ -95,6 +95,7 @@ function routeWrapper(route, appCtx){
 function routeHandler(req, res){
 	var route = req.route;
 	var appCtx = sh.appCtx;
+	var domainConfig = appCtx.config.hosts[req.headers.host];	
 	var postrouteDone = function(proceed){
 		if(!proceed){
 			sh.error("Postroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
@@ -123,14 +124,20 @@ function routeHandler(req, res){
 
 		res.render = function(view, localsOrCallback, callback){
 			var dirs = appCtx.config.dirs;
-			if(dirs.themedViews !== ""){
-				var viewFile = path.join(dirs.themedViews, view);
+			var theme = appCtx.config.theme;
+			var themedViews = dirs.themedViews;
+			if(domainConfig && domainConfig.theme){
+				theme = domainConfig.theme;
+				themedViews = path.resolve(config.dirs.views, "themes", theme);
+			}
+			if(themedViews && themedViews !== ""){
+				var viewFile = path.join(themedViews, view);
 				var ext = path.extname(viewFile);
 				if(ext == ""){
 					viewFile = viewFile + "." + appCtx.config.viewEngine;
 				}
 				if(utils.fileExists(viewFile)){
-					view = "themes/" + appCtx.config.theme + "/" + view;
+					view = "themes/" + theme + "/" + view;
 				}
 			}
 			res.sh.pendingOp = 

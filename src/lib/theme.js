@@ -14,8 +14,21 @@ var fs = require("fs");
 var moment = require("moment");
 
 module.exports = function(req, res, next){
+	try{
+		theme(req, res, next);
+	}catch(err){
+		sh.error("Theme processing error: " + err.stack);
+		throw new Error("Theme Processing Error");
+	}
+}
+
+function theme(req, res, next){
+	var domainConfig = sh.appCtx.config.hosts[req.headers.host];	
 	var reqPath = url.parse(req.url).pathname;
 	var themedPublic = sh.appCtx.config.dirs.themedPublic;
+	if(domainConfig && domainConfig.theme){
+		themedPublic = path.resolve(sh.appCtx.config.dirs.pubThemes, domainConfig.theme);
+	}	
 	var themePath = path.join(themedPublic, reqPath);
 	var ext = path.extname(reqPath);
 	req.times = {start: moment()};

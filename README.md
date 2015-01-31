@@ -53,6 +53,8 @@ Key features (at the moment):
 
 * Support for easily configurable application UI themes.
 
+* UI themes can be associated with domains, i.e., depending on the domain by which the site is accessed a separate set of files/views can be served. Note that, at the moment, controllers are shared across domains. This results in a limited support for virtual hosting.
+
 Currently the software is in alpha stage with featured being added on a daily (even hourly) basis. First full featured beta release is expected to happen in another week or so. After that we will be putting up more documentation.
 
 The prelaunch web app (including its admin console) for the cloud log management platform for Shelloid (http://shelloid.com) is built using Shelloid.
