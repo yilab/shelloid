@@ -96,7 +96,7 @@ function routeHandler(req, res){
 	var route = req.route;
 	var appCtx = sh.appCtx;
 	var domainConfig = appCtx.config.hosts[req.headers.host];	
-	var postrouteDone = function(proceed){
+	var doXmit = function(proceed){
 		if(!proceed){
 			sh.error("Postroute processing failed for: " + route.relPath + " (" + route.fnName + ")");
 			logErrors(req);
@@ -109,7 +109,7 @@ function routeHandler(req, res){
 		if(res.sh.pendingOp.op == "render"){
 			res.render_.apply(res, res.sh.pendingOp.params);
 		}else{
-			throw new Error("Unknown operation in postrouteDone(): " + res.sh.pendingOp);
+			throw new Error("Unknown operation in doXmit(): " + res.sh.pendingOp);
 		}				
 	}
 	var invokeRoute = function(){
@@ -118,34 +118,39 @@ function routeHandler(req, res){
 		res.json = function(obj){
 			res.sh.pendingOp = {op: "json", params: [obj]};
 			res.sh.obj = obj;
-			invokeHooks("postroute", req, res, postrouteDone);
+			invokeHooks("postroute", req, res, doXmit);
 			return res;
 		};			
 
 		res.render = function(view, localsOrCallback, callback){
-			var dirs = appCtx.config.dirs;
-			var theme = appCtx.config.theme;
-			var themedViews = dirs.themedViews;
-			if(domainConfig && domainConfig.theme){
-				theme = domainConfig.theme;
-				themedViews = path.resolve(config.dirs.views, "themes", theme);
-			}
-			if(themedViews && themedViews !== ""){
-				var viewFile = path.join(themedViews, view);
-				var ext = path.extname(viewFile);
-				if(ext == ""){
-					viewFile = viewFile + "." + appCtx.config.viewEngine;
-				}
-				if(utils.fileExists(viewFile)){
-					view = "themes/" + theme + "/" + view;
-				}
-			}
-			res.sh.pendingOp = 
-				{op: "render", params: [view, localsOrCallback, callback]};			
+			res.sh.theme = appCtx.config.theme;
+
 			if(utils.isObject(localsOrCallback)){
 				res.sh.obj = localsOrCallback;
 			}
-			invokeHooks("postroute", req, res, postrouteDone);
+			invokeHooks("prerender", req, res, prerenderDone);
+			
+			var prerenderDone = function(){
+				var dirs = appCtx.config.dirs;
+				var theme = res.theme;
+				var themedViews = dirs.themedViews;				
+				if(theme != appCtx.config.theme){
+					themedViews = path.resolve(config.dirs.views, "themes", theme);
+				}
+				if(themedViews && themedViews !== ""){
+					var viewFile = path.join(themedViews, view);
+					var ext = path.extname(viewFile);
+					if(ext == ""){
+						viewFile = viewFile + "." + appCtx.config.viewEngine;
+					}
+					if(utils.fileExists(viewFile)){
+						view = "themes/" + theme + "/" + view;
+					}
+				}				
+				res.sh.pendingOp = 
+					{op: "render", params: [view, localsOrCallback, callback]};			
+				invokeHooks("postroute", req, res, doXmit);
+			}
 			return res;
 		}
 		req.sh.errors = [];//clear any errors from previous steps.

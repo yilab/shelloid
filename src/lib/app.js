@@ -20,7 +20,6 @@ var express = require('express'),
 	passport = require("passport");
 
 var utils = lib_require("utils");
-var theme = lib_require("theme");
 
 exports.newInstance = function(appCtx){
 	var sessionName = appCtx.config.session.name;
@@ -35,7 +34,7 @@ exports.newInstance = function(appCtx){
 	}else{
 		sh.info("No default view engine configured");
 	}
-	app.use(theme);
+	addPreprocessMiddlewares(app);
 	app.use(express.static(appCtx.config.dirs.pub));	
 	//app.use(express.favicon());
 	app.use(cookieParser());
@@ -75,4 +74,11 @@ exports.newInstance = function(appCtx){
 	app.use(app.router);
 
 	return app;
+}
+
+function addPreprocessMiddlewares(app){
+	var hooks = sh.ext.hooks["preprocess"];
+	for(var i=0;i<hooks.length;i++){
+		app.use(hooks[i].handler);
+	}
 }

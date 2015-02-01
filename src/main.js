@@ -174,13 +174,8 @@ function app_pkg_initDone(err){
 		process.exit(0);
 	}else{
 		sh.info("Application package manager initialization done.");	
-		extMgr.loadExtensions(createAppInstance);
+		extMgr.loadExtensions(dbInit);
 	}
-}
-
-function createAppInstance(){
-	serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
-	dbInit();
 }
 
 function dbInit(){
@@ -193,10 +188,16 @@ function appInit(){
 
 function loadAppMods(){
 	sh.info("Database initialization done");
-	loader.loadAll(appModsLoaded);
+	loader.loadAll(createAppInstance);
 }
 
-function appModsLoaded(){		
+function createAppInstance(){
+	serverCtx.appCtx.app = app.newInstance(serverCtx.appCtx);
+	addAppMods();
+}
+
+
+function addAppMods(){		
 	if(serverCtx.appCtx.authMods.length == 0){
 		sh.info("No authentication modules found.");
 		authModsAdded();

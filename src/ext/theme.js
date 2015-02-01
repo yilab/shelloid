@@ -13,12 +13,31 @@ var utils = lib_require("utils");
 var fs = require("fs");
 var moment = require("moment");
 
-module.exports = function(req, res, next){
+module.exports = function(){
+	return extInfo;
+} 
+
+var extInfo = 
+{
+	hooks:[
+	{type: "prerender", handler: prerenderHook},
+	{type: "preprocess", handler: themeMiddleware}	
+	]
+};
+
+function themeMiddleware(req, res, next){
 	try{
 		theme(req, res, next);
 	}catch(err){
 		sh.error("Theme processing error: " + err.stack);
 		throw new Error("Theme Processing Error");
+	}
+}
+
+function prerenderHook(req, res){
+	var domainConfig = sh.appCtx.config.hosts[req.headers.host];	
+	if(domainConfig && domainConfig.theme){
+		theme = domainConfig.theme;					
 	}
 }
 
