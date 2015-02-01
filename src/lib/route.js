@@ -128,14 +128,13 @@ function routeHandler(req, res){
 			if(utils.isObject(localsOrCallback)){
 				res.sh.obj = localsOrCallback;
 			}
-			invokeHooks("prerender", req, res, prerenderDone);
-			
+		
 			var prerenderDone = function(){
 				var dirs = appCtx.config.dirs;
-				var theme = res.theme;
+				var theme = res.sh.theme;
 				var themedViews = dirs.themedViews;				
 				if(theme != appCtx.config.theme){
-					themedViews = path.resolve(config.dirs.views, "themes", theme);
+					themedViews = path.resolve(appCtx.config.dirs.views, "themes", theme);
 				}
 				if(themedViews && themedViews !== ""){
 					var viewFile = path.join(themedViews, view);
@@ -151,6 +150,9 @@ function routeHandler(req, res){
 					{op: "render", params: [view, localsOrCallback, callback]};			
 				invokeHooks("postroute", req, res, doXmit);
 			}
+
+			invokeHooks("prerender", req, res, prerenderDone);
+			
 			return res;
 		}
 		req.sh.errors = [];//clear any errors from previous steps.

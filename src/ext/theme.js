@@ -34,11 +34,12 @@ function themeMiddleware(req, res, next){
 	}
 }
 
-function prerenderHook(req, res){
+function prerenderHook(req, res, done){
 	var domainConfig = sh.appCtx.config.hosts[req.headers.host];	
 	if(domainConfig && domainConfig.theme){
 		theme = domainConfig.theme;					
 	}
+	done();
 }
 
 function theme(req, res, next){
