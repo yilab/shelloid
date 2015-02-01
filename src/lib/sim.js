@@ -121,6 +121,6 @@ var methods = ["get", "post", "delete", "options", "all"];
 function initSimApp(){
 	for(var i =0;i<methods.length;i++){
 		var method = methods[i];
-		SimApp.prototype[method] = utils.curry(SimApp.prototype.method, method);
+		SimApp.prototype[method] = utils.partial(SimApp.prototype.method, method);
 	}
 } 

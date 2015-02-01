@@ -167,7 +167,7 @@ function recursiveDirSync2(currPath, relPath, res, remRecurse){
 	}
 }
 
-exports.curry = function(fn){
+exports.partial = function(fn){
 	var savedArgs = Array.prototype.slice.call(arguments, 1);
 	return function(){
 		var args = savedArgs.concat(Array.prototype.slice.call(arguments, 0));
