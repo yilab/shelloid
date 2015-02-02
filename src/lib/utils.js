@@ -204,3 +204,7 @@ exports.envConfig = function(appCtx, basePath, ext){
 	var configPath = path.join(basePath, "config" + suffix);
 	return configPath;
 }
+
+exports.replaceAll = function(str, from, to){
+  return str.replace(new RegExp(from, 'g'), to);
+}
