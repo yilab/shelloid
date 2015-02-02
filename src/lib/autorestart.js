@@ -35,16 +35,15 @@ exports.init = function (serverCtx){
 		return;
 	}
 	
-	/*var pathToRegEx = function(p){
+	var pathToRegEx = function(p){
 		p = p.replace("\\", "\\\\")
 			.replace(".", "\\.")
 			.replace("$", "\\$")
 			.replace("?", "\\?")
 			;
 		return new RegExp(p + ".*");
-	}*/
-	
-	var ignored = null;
+	}
+	var ignored = [config.dirs.pub, config.dirs.pubThemes];
 	watcher = chokidar.watch(paths, {ignored: ignored, persistent: true});
 	
 	watcher
