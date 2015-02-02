@@ -21,7 +21,7 @@ Clojure
 	)
 ```
 
-Clojure compute service (CCS) requires Leiningen to be installed somewhere in the system path.
+Clojure compute service (CCS) requires [Leiningen](http://leiningen.org) to be installed somewhere in the system path.
 
 Please Note: More documentation is on the way. Please bear with us for couple of weeks!
 
