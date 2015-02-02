@@ -10,6 +10,8 @@
 var chokidar = require('chokidar');
 var cluster = require('cluster');
 var child_process = require('child_process');
+var path = require("path");
+var utils = lib_require("utils");
 
 var watcher;
 
@@ -18,7 +20,10 @@ exports.init = function (serverCtx){
 	var config = serverCtx.appCtx.config;
 	if(config.autoRestart.appUpdate){
 		sh.info("Autorestart enabled on application updates");
-		paths.push(serverCtx.appCtx.basePath);
+		paths.push(path.join(serverCtx.appCtx.basePath, "src"));
+		var configPath = utils.envConfig(serverCtx.appCtx, 
+										serverCtx.appCtx.basePath, ".json");
+		paths.push(configPath);
 	}
 	if(config.autoRestart.serverUpdate){
 		sh.info("Autorestart enabled on server updates");
@@ -29,16 +34,18 @@ exports.init = function (serverCtx){
 		sh.info("Auto restart disabled");
 		return;
 	}
-	var dataPath = config.dirs.data;
-	dataPath = dataPath.replace("\\", "\\\\")
-					   .replace(".", "\\.")
-					   .replace("$", "\\$")
-					   .replace("?", "\\?")
-					   ;
-							
-	var re = new RegExp(dataPath + ".*");
 	
-	watcher = chokidar.watch(paths, {ignored: re, persistent: true});
+	/*var pathToRegEx = function(p){
+		p = p.replace("\\", "\\\\")
+			.replace(".", "\\.")
+			.replace("$", "\\$")
+			.replace("?", "\\?")
+			;
+		return new RegExp(p + ".*");
+	}*/
+	
+	var ignored = null;
+	watcher = chokidar.watch(paths, {ignored: ignored, persistent: true});
 	
 	watcher
 	.on("change", watchNotification.bind(null, "change"))

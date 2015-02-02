@@ -31,7 +31,8 @@ var loader = lib_require("loader"),
 	auth = lib_require("auth"),
 	app_pkg = lib_require("app_pkg"),
 	dbconfig = lib_require("dbconfig"),
-	autorestart = lib_require("autorestart");
+	autorestart = lib_require("autorestart"),
+	ccs = lib_require("ccs");
 	
 if(process.argv.length <= 2){
     console.log("Please provide app directory as the argument");
@@ -88,7 +89,7 @@ function onChildExit(){
 }
 
 function startMon(){
-	console.log("Setting up the monitor process");
+	console.log("Setting up the monitor process. OS: " + os.type());
 	args.push("--nomon");
 	var child = child_process.fork(process.argv[1], args, 
 		{cwd: process.cwd(), silent:false});
@@ -152,12 +153,12 @@ function startServer(){
 		process.on ('SIGINT', autorestart.gracefulShutdown);
 		process.on ('SIGHUP', autorestart.gracefulShutdown);
 
-		app_pkg.init(serverCtx.appCtx, app_pkg_initDone);
+		app_pkg.init(serverCtx.appCtx, loadExtensions);
 	}
 
 	if(cluster.isMaster){
 		autorestart.init(serverCtx);	
-	}	
+	}		
 }
 
 function processWorkerMsg(msg){
@@ -168,13 +169,21 @@ function processWorkerMsg(msg){
 	}
 }
 
-function app_pkg_initDone(err){
+function loadExtensions(err){
 	if(err){
 		console.log("Server initialization error: " + err + "Exiting.");
 		process.exit(0);
 	}else{
 		sh.info("Application package manager initialization done.");	
-		extMgr.loadExtensions(dbInit);
+		extMgr.loadExtensions(ccsInit);
+	}
+}
+
+function ccsInit(){
+	if(serverCtx.appCtx.config.ccs.enable){
+		ccs.init(dbInit);
+	}else{
+		dbInit();
 	}
 }
 

@@ -198,3 +198,9 @@ exports.priorityInsert = function(array, obj){
 		array.splice(i, 0, obj);
 	}
 }
+
+exports.envConfig = function(appCtx, basePath, ext){
+	var suffix = (!appCtx.env || appCtx.env == "") ? ext : "." + appCtx.env + ext;
+	var configPath = path.join(basePath, "config" + suffix);
+	return configPath;
+}

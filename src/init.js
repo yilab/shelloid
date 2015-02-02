@@ -42,8 +42,7 @@ exports.installGlobals = function(){
 }
 
 exports.loadAppConfig = function(appCtx){
-	var suffix = (!appCtx.env || appCtx.env == "") ? ".json" : "." + appCtx.env + ".json";
-	var configFile = appCtx.basePath + "/config" + suffix;
+	var configFile = utils.envConfig(appCtx, appCtx.basePath, ".json");
 
 	if(utils.fileExists(configFile)){
 		var configTxt = fs.readFileSync(configFile, "utf-8");
@@ -83,6 +82,14 @@ exports.loadAppConfig = function(appCtx){
 		config.dirs._ext = config.dirs.ext;
 		config.dirs.ext  = path.resolve(appCtx.basePath, config.dirs.ext);		
 
+		config.dirs._ccs = config.dirs.ccs;
+		config.dirs.ccs  = path.resolve(appCtx.basePath, config.dirs.ccs);		
+		
+		config.ccs.configPath = utils.envConfig(appCtx, config.dirs.ccs, ".clj");
+
+		config.dirs._ccsServer = config.dirs.ccsServer;
+		config.dirs.ccsServer  = path.resolve(appCtx.basePath, config.dirs.ccsServer);		
+		
 		config.dirs._views = config.dirs.views;
 		config.dirs.views = path.resolve(appCtx.basePath, appCtx.config.dirs.views);
 		config.dirs._pubThemes = config.dirs.pubThemes;
@@ -209,13 +216,23 @@ exports.serverCtx = function(pathParam, envName){
 					data: "data",
 					uploads: "uploads",
 					init: "src/init.js",
-					ext: "src/ext"
+					ext: "src/ext",
+					ccs: "ccs",
+					ccsServer: "ccs/server" 
 				},			
 				enableCluster: false,
 				domain: "localhost",
 				proto: "http",
 				port: 8080,
 				baseUrl: null, //computed dynamically
+				ccs:{
+					services: [],
+					host: "localhost",
+					port: 9090,
+					enable: false,
+					retryMillis: 8000,
+					configPath: null//dynamically computed from dirs.ccs.
+				},
 				log:{
 					accessLogs: true,
 					file : "shelloid.log", //relative to data dir
